@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Sidebar, type NavKey } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { Placeholder } from "./Placeholder";
+import Overview from "../pages/Dashboard/Overview";
 
 const titles: Record<NavKey, string> = {
   overview: "Overview",
@@ -25,8 +26,11 @@ export function Layout() {
         <Topbar />
 
         <main className="min-h-0 flex-1 overflow-y-auto p-4">
-          {/* main content placeholder, change title according to current nav */}
-          <Placeholder title={titles[active]} />
+          {active === "overview" ? (
+            <Overview />
+          ) : (
+            <Placeholder title={titles[active]} />
+          )}
         </main>
       </div>
     </div>
