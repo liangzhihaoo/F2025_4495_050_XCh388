@@ -3,6 +3,7 @@ import { Sidebar, type NavKey } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { Placeholder } from "./Placeholder";
 import Overview from "../pages/Dashboard/Overview";
+import UsersList from "../pages/Users/UsersList";
 
 const titles: Record<NavKey, string> = {
   overview: "Overview",
@@ -28,6 +29,8 @@ export function Layout() {
         <main className="min-h-0 flex-1 overflow-y-auto p-4">
           {active === "overview" ? (
             <Overview />
+          ) : active === "users" ? (
+            <UsersList />
           ) : (
             <Placeholder title={titles[active]} />
           )}
