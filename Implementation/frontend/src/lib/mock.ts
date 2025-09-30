@@ -50,4 +50,30 @@ export function mockNotifications(n: number): Notification[] {
   })
 }
 
+export type User = {
+  id: string
+  name: string
+  email: string
+  plan: 'Free' | 'Client Plus' | 'Enterprise'
+  status: 'Active' | 'Suspended'
+  createdAt: string
+  lastActive: string
+  uploads: number
+  onboarding: 'Complete' | 'Partial' | 'Not Started'
+}
+
+export function mockUsers(n: number): User[] {
+  return Array.from({ length: n }).map((_, i) => ({
+    id: `u${i}`,
+    name: `User ${i}`,
+    email: `user${i}@demo.com`,
+    plan: i % 2 === 0 ? 'Free' : 'Client Plus',
+    status: i % 5 === 0 ? 'Suspended' : 'Active',
+    createdAt: '2025-01-01',
+    lastActive: '2025-02-15',
+    uploads: Math.floor(Math.random() * 200),
+    onboarding: i % 3 === 0 ? 'Complete' : 'Partial',
+  }))
+}
+
 
