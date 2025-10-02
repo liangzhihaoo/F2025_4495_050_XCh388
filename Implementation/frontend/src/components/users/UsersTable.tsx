@@ -1,11 +1,20 @@
+import { useState } from 'react'
 import type { User } from '../../lib/mock'
+import PlanChangeModal from './PlanChangeModal'
+import UserActionsModal from './UserActionsModal'
 
 type Props = {
   users: User[]
   onView: (u: User) => void
+  onPlanChange: (userId: string, newPlan: User['plan']) => void
+  onDeactivate: (userId: string) => void
+  onDelete: (userId: string) => void
 }
 
-export default function UsersTable({ users, onView }: Props) {
+export default function UsersTable({ users, onView, onPlanChange, onDeactivate, onDelete }: Props) {
+  const [showPlanModal, setShowPlanModal] = useState(false)
+  const [showActionsModal, setShowActionsModal] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
   if (!users || users.length === 0) {
     return <div className="bg-white rounded-xl shadow-sm p-6 text-sm text-gray-600">No users found.</div>
   }
@@ -55,11 +64,29 @@ export default function UsersTable({ users, onView }: Props) {
               <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${onboardingClass(u.onboarding)}`}>{u.onboarding}</span></td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <button className="px-2 py-1 text-sm rounded border border-gray-300 hover:bg-gray-50" onClick={() => onView(u)}>
+                  <button 
+                    className="px-2 py-1 text-sm rounded border border-gray-300 hover:bg-gray-50" 
+                    onClick={() => onView(u)}
+                  >
                     View
                   </button>
-                  <button className="px-2 py-1 text-sm rounded border border-gray-300 text-gray-600 hover:bg-gray-50" disabled>
-                    Deactivate ▾
+                  <button 
+                    className="px-2 py-1 text-sm rounded border border-blue-300 text-blue-600 hover:bg-blue-50" 
+                    onClick={() => {
+                      setSelectedUser(u)
+                      setShowPlanModal(true)
+                    }}
+                  >
+                    Change Plan
+                  </button>
+                  <button 
+                    className="px-2 py-1 text-sm rounded border border-amber-300 text-amber-600 hover:bg-amber-50" 
+                    onClick={() => {
+                      setSelectedUser(u)
+                      setShowActionsModal(true)
+                    }}
+                  >
+                    Manage
                   </button>
                 </div>
               </td>
@@ -67,6 +94,21 @@ export default function UsersTable({ users, onView }: Props) {
           ))}
         </tbody>
       </table>
+      
+      <PlanChangeModal
+        user={selectedUser}
+        isOpen={showPlanModal}
+        onClose={() => setShowPlanModal(false)}
+        onPlanChange={onPlanChange}
+      />
+      
+      <UserActionsModal
+        user={selectedUser}
+        isOpen={showActionsModal}
+        onClose={() => setShowActionsModal(false)}
+        onDeactivate={onDeactivate}
+        onDelete={onDelete}
+      />
     </div>
   )
 }
