@@ -50,7 +50,7 @@ export default function Overview() {
     return () => clearTimeout(t)
   }, [dateRange, granularity])
 
-  const rightFilters = (
+  const dateControls = (
     <div className="flex items-center gap-2">
       <select
         className="border border-gray-300 rounded-md text-sm px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -77,7 +77,10 @@ export default function Overview() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Overview</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Overview</h1>
+        {dateControls}
+      </div>
 
       {/* Row 1: KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -89,7 +92,7 @@ export default function Overview() {
       {/* Row 2: Line chart + Notifications */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 h-[380px]">
-          <ChartCard title="Daily Signups" subtitle="Unique user registrations" rightSlot={rightFilters}>
+          <ChartCard title="Daily Signups" subtitle="Unique user registrations">
             {error ? (
               <div className="text-sm text-red-600">Failed to load data.</div>
             ) : loading ? (
