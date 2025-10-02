@@ -76,4 +76,31 @@ export function mockUsers(n: number): User[] {
   }))
 }
 
+export type UploadItem = {
+  id: string                      // submission id
+  userId: string
+  userEmail: string
+  createdAt: string               // ISO string
+  lastUpdatedAt: string           // ISO string
+  title: string                   // product name
+  images: { id: string; url: string }[] // 1..n
+  notes?: string
+}
+
+export function mockUploads(n: number): UploadItem[] {
+  return Array.from({ length: n }).map((_, i) => ({
+    id: `sub-${1000 + i}`,
+    userId: `u${i % 12}`,
+    userEmail: `user${i % 12}@demo.com`,
+    createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+    lastUpdatedAt: new Date(Date.now() - i * 86400000 + 3600000).toISOString(),
+    title: `Item ${i + 1}`,
+    images: Array.from({ length: (i % 4) + 1 }).map((__, j) => ({
+      id: `img-${i}-${j}`,
+      url: `https://picsum.photos/seed/${i}-${j}/320/320`
+    })),
+    notes: i % 5 === 0 ? "Auto-check: possible duplicate." : undefined
+  }))
+}
+
 
