@@ -9,8 +9,45 @@ export default function UsersList() {
   const [plan, setPlan] = useState('')
   const [status, setStatus] = useState('')
   const [selected, setSelected] = useState<User | null>(null)
+  const [users, setUsers] = useState<User[]>([])
 
-  const users = useMemo(() => mockUsers(20), [])
+  // Initialize users on component mount
+  useMemo(() => {
+    setUsers(mockUsers(20))
+  }, [])
+
+  // Handle user operations
+  const handlePlanChange = (userId: string, newPlan: User['plan']) => {
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === userId ? { ...user, plan: newPlan } : user
+      )
+    )
+    // Update selected user if it's the one being changed
+    if (selected?.id === userId) {
+      setSelected(prev => prev ? { ...prev, plan: newPlan } : null)
+    }
+  }
+
+  const handleDeactivate = (userId: string) => {
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === userId ? { ...user, status: 'Suspended' as const } : user
+      )
+    )
+    // Update selected user if it's the one being deactivated
+    if (selected?.id === userId) {
+      setSelected(prev => prev ? { ...prev, status: 'Suspended' as const } : null)
+    }
+  }
+
+  const handleDelete = (userId: string) => {
+    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId))
+    // Close drawer if the deleted user was selected
+    if (selected?.id === userId) {
+      setSelected(null)
+    }
+  }
 
   const filtered = useMemo(() => {
     return users.filter((u) => {
@@ -33,8 +70,20 @@ export default function UsersList() {
         status={status}
         onStatus={setStatus}
       />
-      <UsersTable users={filtered} onView={setSelected} />
-      <UserDetailDrawer user={selected} onClose={() => setSelected(null)} />
+      <UsersTable 
+        users={filtered} 
+        onView={setSelected}
+        onPlanChange={handlePlanChange}
+        onDeactivate={handleDeactivate}
+        onDelete={handleDelete}
+      />
+      <UserDetailDrawer 
+        user={selected} 
+        onClose={() => setSelected(null)}
+        onPlanChange={handlePlanChange}
+        onDeactivate={handleDeactivate}
+        onDelete={handleDelete}
+      />
     </div>
   )
 }

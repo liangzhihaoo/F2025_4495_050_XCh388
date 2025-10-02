@@ -1,11 +1,19 @@
+import { useState } from 'react'
 import type { User } from '../../lib/mock'
+import PlanChangeModal from './PlanChangeModal'
+import UserActionsModal from './UserActionsModal'
 
 type Props = {
   user: User | null
   onClose: () => void
+  onPlanChange: (userId: string, newPlan: User['plan']) => void
+  onDeactivate: (userId: string) => void
+  onDelete: (userId: string) => void
 }
 
-export default function UserDetailDrawer({ user, onClose }: Props) {
+export default function UserDetailDrawer({ user, onClose, onPlanChange, onDeactivate, onDelete }: Props) {
+  const [showPlanModal, setShowPlanModal] = useState(false)
+  const [showActionsModal, setShowActionsModal] = useState(false)
   const open = Boolean(user)
 
   // Close on ESC
@@ -54,18 +62,36 @@ export default function UserDetailDrawer({ user, onClose }: Props) {
             <div className="h-24 bg-gray-100 rounded-md" />
           </div>
           <div className="mt-auto flex gap-2">
-            <button className="px-3 py-2 text-sm rounded border border-gray-300 text-gray-600" disabled>
-              Deactivate
+            <button 
+              onClick={() => setShowActionsModal(true)}
+              className="px-3 py-2 text-sm rounded border border-amber-300 text-amber-600 hover:bg-amber-50"
+            >
+              Manage User
             </button>
-            <button className="px-3 py-2 text-sm rounded border border-gray-300 text-gray-600" disabled>
+            <button 
+              onClick={() => setShowPlanModal(true)}
+              className="px-3 py-2 text-sm rounded border border-blue-300 text-blue-600 hover:bg-blue-50"
+            >
               Change Plan
-            </button>
-            <button className="px-3 py-2 text-sm rounded border border-red-300 text-red-600" disabled>
-              Delete
             </button>
           </div>
         </div>
       </div>
+      
+      <PlanChangeModal
+        user={user}
+        isOpen={showPlanModal}
+        onClose={() => setShowPlanModal(false)}
+        onPlanChange={onPlanChange}
+      />
+      
+      <UserActionsModal
+        user={user}
+        isOpen={showActionsModal}
+        onClose={() => setShowActionsModal(false)}
+        onDeactivate={onDeactivate}
+        onDelete={onDelete}
+      />
     </>
   )
 }
