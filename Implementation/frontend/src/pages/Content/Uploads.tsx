@@ -1,105 +1,204 @@
 import { useMemo, useState } from 'react'
+import { mockUploads, type UploadItem } from '../../lib/mock'
+import UploadFilters, { type UploadFiltersValue } from '../../components/content/UploadFilters'
+import UploadTable from '../../components/content/UploadTable'
+import UploadGrid from '../../components/content/UploadGrid'
+import UploadDetailDrawer from '../../components/content/UploadDetailDrawer'
+import DeleteConfirmModal from '../../components/content/DeleteConfirmModal'
+import ImageGalleryModal from '../../components/content/ImageGalleryModal'
 
 export default function Uploads() {
-  const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  // Data
+  const allUploads = useMemo(() => mockUploads(60), [])
 
-  const files = useMemo(
-    () => [
-      { name: 'brand-guide.pdf', type: 'PDF', size: '2.1 MB', by: 'Alex Chen', date: '2025-09-20' },
-      { name: 'hero.jpg', type: 'Image', size: '840 KB', by: 'Jamie Lee', date: '2025-09-22' },
-      { name: 'data-export.csv', type: 'CSV', size: '4.7 MB', by: 'Taylor Ray', date: '2025-09-23' },
-      { name: 'contract.docx', type: 'Doc', size: '312 KB', by: 'Sam Patel', date: '2025-09-24' },
-    ],
-    []
-  )
+  // Local state
+  const [filters, setFilters] = useState<UploadFiltersValue>({
+    q: '',
+    range: 'all',
+    view: 'table'
+  })
+  const [selectedItem, setSelectedItem] = useState<UploadItem | null>(null)
+  const [toDelete, setToDelete] = useState<UploadItem | null>(null)
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false)
+  const [galleryIndex, setGalleryIndex] = useState(0)
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 20
+
+  // Filter and search logic
+  const filteredUploads = useMemo(() => {
+    let filtered = allUploads
+
+    // Search filter
+    if (filters.q.trim()) {
+      const query = filters.q.toLowerCase()
+      filtered = filtered.filter(item =>
+        item.title.toLowerCase().includes(query) ||
+        item.id.toLowerCase().includes(query) ||
+        item.userEmail.toLowerCase().includes(query)
+      )
+    }
+
+    // Date range filter
+    if (filters.range !== 'all') {
+      const now = new Date()
+      const days = filters.range === '7d' ? 7 : filters.range === '30d' ? 30 : 90
+      const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
+      
+      filtered = filtered.filter(item => new Date(item.createdAt) >= cutoffDate)
+    }
+
+    return filtered
+  }, [allUploads, filters])
+
+  // Pagination
+  const totalPages = Math.ceil(filteredUploads.length / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedUploads = filteredUploads.slice(startIndex, endIndex)
+
+  // Handlers
+  const handleFiltersChange = (newFilters: UploadFiltersValue) => {
+    setFilters(newFilters)
+    setCurrentPage(1) // Reset to first page when filters change
+  }
+
+  const handleViewItem = (item: UploadItem) => {
+    setSelectedItem(item)
+  }
+
+  const handleDeleteItem = (item: UploadItem) => {
+    setToDelete(item)
+  }
+
+  const handleConfirmDelete = (item: UploadItem) => {
+    // In a real app, this would make an API call
+    // For now, we'll just close the modal
+    setToDelete(null)
+  }
+
+  const handleOpenGallery = (startIndex: number) => {
+    setGalleryIndex(startIndex)
+    setIsGalleryOpen(true)
+  }
+
+  const handleCloseGallery = () => {
+    setIsGalleryOpen(false)
+  }
+
+  const handlePreviousPage = () => {
+    setCurrentPage(prev => Math.max(1, prev - 1))
+  }
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(totalPages, prev + 1))
+  }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">Uploads</h1>
-        <p className="text-sm text-gray-600">Manage and review all uploaded files here.</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-gray-900">Uploads</h1>
+        <div className="text-sm text-gray-500">
+          {filteredUploads.length} upload{filteredUploads.length !== 1 ? 's' : ''}
+        </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-        <div className="text-sm text-gray-600">Recent files</div>
-        <button
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          onClick={() => setOpen(true)}
-        >
-          Upload New File
-        </button>
-      </div>
+      {/* Filters */}
+      <UploadFilters value={filters} onChange={handleFiltersChange} />
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="p-6">
-            <div className="h-8 bg-gray-100 rounded animate-pulse mb-3" />
-            <div className="h-8 bg-gray-100 rounded animate-pulse mb-3" />
-            <div className="h-8 bg-gray-100 rounded animate-pulse" />
+      {/* Content */}
+      {filters.view === 'table' ? (
+        <UploadTable
+          items={paginatedUploads}
+          onOpen={handleViewItem}
+          onDelete={handleDeleteItem}
+        />
+      ) : (
+        <UploadGrid
+          items={paginatedUploads}
+          onOpen={handleViewItem}
+          onDelete={handleDeleteItem}
+        />
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between bg-white px-4 py-3 border border-gray-200 rounded-lg">
+          <div className="flex-1 flex justify-between sm:hidden">
+            <button
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="table-auto w-full text-sm">
-              <thead className="text-left text-xs text-gray-500">
-                <tr>
-                  <th className="px-4 py-3">File Name</th>
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Size</th>
-                  <th className="px-4 py-3">Uploaded By</th>
-                  <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {files.map((f, i) => (
-                  <tr key={f.name} className={i % 2 === 1 ? 'odd:bg-gray-50' : ''}>
-                    <td className="px-4 py-3 text-gray-900">{f.name}</td>
-                    <td className="px-4 py-3 text-gray-700">{f.type}</td>
-                    <td className="px-4 py-3 text-gray-700">{f.size}</td>
-                    <td className="px-4 py-3 text-gray-700">{f.by}</td>
-                    <td className="px-4 py-3 text-gray-700">{f.date}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button className="px-2 py-1 rounded border border-gray-300 hover:bg-gray-50">View</button>
-                        <button className="px-2 py-1 rounded border border-gray-300 text-red-600 hover:bg-gray-50">Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {open && (
-        <>
-          <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setOpen(false)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-lg rounded-xl bg-white shadow-lg">
-              <div className="border-b px-4 py-3 text-sm font-medium">Upload New File</div>
-              <div className="p-4 space-y-3">
-                <label className="block text-sm text-gray-700">Choose file</label>
-                <input type="file" className="block w-full text-sm" />
-                <div className="h-28 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center text-sm text-gray-500">
-                  Drag & drop a file here
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 border-t px-4 py-3">
-                <button className="px-3 py-2 text-sm rounded border border-gray-300" onClick={() => setOpen(false)}>
-                  Cancel
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                <span className="font-medium">{Math.min(endIndex, filteredUploads.length)}</span> of{' '}
+                <span className="font-medium">{filteredUploads.length}</span> results
+              </p>
+            </div>
+            <div>
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
                 </button>
-                <button className="px-3 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700" onClick={() => setOpen(false)}>
-                  Upload
+                <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
                 </button>
-              </div>
+              </nav>
             </div>
           </div>
-        </>
+        </div>
       )}
+
+      {/* Modals and Drawers */}
+      <UploadDetailDrawer
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onOpenGallery={handleOpenGallery}
+      />
+
+      <DeleteConfirmModal
+        item={toDelete}
+        open={Boolean(toDelete)}
+        onCancel={() => setToDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
+
+      <ImageGalleryModal
+        item={selectedItem}
+        open={isGalleryOpen}
+        startIndex={galleryIndex}
+        onClose={handleCloseGallery}
+      />
     </div>
   )
 }
-
-
