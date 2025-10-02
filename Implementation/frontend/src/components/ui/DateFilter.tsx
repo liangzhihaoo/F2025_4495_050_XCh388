@@ -239,7 +239,7 @@ export default function DateFilter({ value, onChange, granularity, onGranularity
 
       {/* Granularity Selector */}
       <select
-        className="border border-gray-300 rounded-md text-sm px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="border border-gray-300 rounded-md text-sm px-2 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         value={granularity}
         onChange={(e) => onGranularityChange(e.target.value as 'D' | 'W' | 'M')}
         aria-label="Granularity"
