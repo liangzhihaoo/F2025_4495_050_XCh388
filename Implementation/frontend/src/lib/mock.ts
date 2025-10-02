@@ -103,4 +103,41 @@ export function mockUploads(n: number): UploadItem[] {
   }))
 }
 
+export type TestimonialStatus = "Published" | "Draft" | "Hidden"
+
+export type Testimonial = {
+  id: string
+  authorName: string
+  authorRole?: string     // e.g., "Founder, ACME"
+  authorAvatarUrl?: string
+  company?: string
+  rating?: number         // 1..5 optional
+  quote: string           // the testimonial text
+  featured: boolean       // surfaced prominently on site
+  status: TestimonialStatus
+  createdAt: string       // ISO
+  updatedAt: string       // ISO
+  source?: "In-app" | "Imported" | "Manual"
+}
+
+export function mockTestimonials(n = 18): Testimonial[] {
+  const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)]
+  const roles = ["CTO","Founder","PM","Designer","Ops Lead","Engineer"]
+  const companies = ["Nova Labs","Bluefin","Kepler","Radian","Glow","Polar"]
+  return Array.from({ length: n }).map((_, i) => ({
+    id: `t-${1000 + i}`,
+    authorName: `User ${i + 1}`,
+    authorRole: pick(roles),
+    authorAvatarUrl: `https://i.pravatar.cc/80?img=${i + 1}`,
+    company: pick(companies),
+    rating: (i % 3 === 0) ? 5 : (i % 5 === 0 ? 4 : undefined),
+    quote: "This platform made pricing our items fast and accurate. Great experience!",
+    featured: i % 6 === 0,
+    status: (["Published","Draft","Hidden"] as TestimonialStatus[])[i % 3],
+    createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+    updatedAt: new Date(Date.now() - i * 86400000 + 3600000).toISOString(),
+    source: pick(["In-app","Imported","Manual"] as const),
+  }))
+}
+
 
