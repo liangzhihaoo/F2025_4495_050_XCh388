@@ -7,7 +7,8 @@ export function mockTimeSeries(daysOrPoints: number, key = 'value') {
     const date = d.toISOString().slice(0, 10)
     const base = 50 + Math.sin(i / 3) * 15
     const jitter = Math.floor(Math.random() * 20)
-    out.push({ date, [key]: Math.max(0, Math.round(base + jitter)) })
+    const value = Math.max(0, Math.round(base + jitter))
+    out.push({ date, [key]: value })
   }
   return out
 }
@@ -138,6 +139,87 @@ export function mockTestimonials(n = 18): Testimonial[] {
     updatedAt: new Date(Date.now() - i * 86400000 + 3600000).toISOString(),
     source: pick(["In-app","Imported","Manual"] as const),
   }))
+}
+
+// Onboarding Funnel Types and Mock Generators
+export type FunnelStep = {
+  name: string;             // e.g., "Sign Up Started"
+  entered: number;          // users entering this step
+  converted: number;        // users moving to next step
+  avgTimeMs?: number;       // average time to move from this step to next
+};
+
+export type FunnelResponse = {
+  steps: FunnelStep[];      // ordered steps
+  totalConversionRate: number; // converted at final step / entered at first
+};
+
+export function mockFunnel(): FunnelResponse {
+  // 5 example steps, descending counts
+  const base = 1000 + Math.floor(Math.random()*200);
+  const s1 = base;
+  const s2 = Math.round(s1 * 0.72);
+  const s3 = Math.round(s2 * 0.68);
+  const s4 = Math.round(s3 * 0.75);
+  const s5 = Math.round(s4 * 0.82);
+  const steps: FunnelStep[] = [
+    { name: "Sign Up Started", entered: s1, converted: s2, avgTimeMs: 4*60*1000 },
+    { name: "Sign Up Completed", entered: s2, converted: s3, avgTimeMs: 6*60*1000 },
+    { name: "Email Verified", entered: s3, converted: s4, avgTimeMs: 15*60*1000 },
+    { name: "First Upload", entered: s4, converted: s5, avgTimeMs: 22*60*1000 },
+    { name: "Profile Completed", entered: s5, converted: s5, avgTimeMs: 0 }, // terminal
+  ];
+  const totalConversionRate = s5 / s1;
+  return { steps, totalConversionRate };
+}
+
+export type ActivityEvent = {
+  distinctId: string;
+  event: string;            // e.g., 'sign_up_completed'
+  timestamp: string;        // ISO
+  properties?: Record<string, any>;
+};
+
+export function mockUserEvents(distinctId = "u-123"): ActivityEvent[] {
+  const now = Date.now();
+  const seq = [
+    ["sign_up_started", -60*60*1000],
+    ["sign_up_completed", -55*60*1000],
+    ["email_verified", -40*60*1000],
+    ["first_upload", -20*60*1000],
+    ["profile_completed", -10*60*1000],
+  ] as const;
+  return seq.map(([ev, offset]) => ({
+    distinctId,
+    event: ev,
+    timestamp: new Date(now + offset).toISOString(),
+    properties: ev === "first_upload" ? { images_count: 3 } : undefined,
+  }));
+}
+
+export type AggregateBucket = {
+  date: string;  // yyyy-mm-dd
+  counts: Record<string, number>; // stepName -> users count
+};
+
+export function mockCohortBuckets(days = 14): AggregateBucket[] {
+  const steps = ["Sign Up Started","Sign Up Completed","Email Verified","First Upload","Profile Completed"];
+  const today = new Date();
+  const res: AggregateBucket[] = [];
+  for (let i = days-1; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const date = d.toISOString().slice(0,10);
+    const base = 40 + Math.floor(Math.random()*30);
+    const counts: Record<string, number> = {
+      [steps[0]]: base,
+      [steps[1]]: Math.round(base * 0.7),
+      [steps[2]]: Math.round(base * 0.5),
+      [steps[3]]: Math.round(base * 0.42),
+      [steps[4]]: Math.round(base * 0.35),
+    };
+    res.push({ date, counts });
+  }
+  return res;
 }
 
 
