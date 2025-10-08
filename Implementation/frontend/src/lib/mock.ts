@@ -372,4 +372,88 @@ export function mockQuotaList(n = 20): UserQuotaRow[] {
   }).sort((a,b) => b.pct - a.pct);
 }
 
+// Alerts & Moderation Types and Mock Generators
+export type Severity = "low" | "medium" | "high";
+export type FlagReason = "blurry" | "duplicate" | "nsfw" | "copyright" | "spam" | "other";
+
+export type FlaggedItem = {
+  id: string;                // submission id
+  userEmail: string;
+  createdAt: string;         // when upload happened
+  flaggedAt: string;         // when flag fired
+  title: string;             // product name
+  images: { id: string; url: string }[]; // evidence
+  reasons: FlagReason[];     // one or more
+  severity: Severity;
+  notes?: string;            // system notes
+  status: "open" | "approved" | "deleted"; // moderation result
+};
+
+export type SystemAlert = {
+  id: string;
+  type: "missing_profile" | "payment_issue" | "quota_exceeded" | "other";
+  userEmail?: string;
+  createdAt: string;
+  message: string;
+  severity: Severity;
+  status: "open" | "resolved" | "snoozed";
+};
+
+export type AuditRow = {
+  id: string;
+  ts: string;                // ISO
+  actor: string;             // admin email or name
+  action: "approve" | "delete" | "resolve" | "snooze" | "bulk_approve" | "bulk_delete";
+  targetType: "flag" | "system";
+  targetId: string;
+  meta?: Record<string, any>;
+};
+
+export function mockFlagged(n = 28): FlaggedItem[] {
+  const reasons: FlagReason[] = ["blurry","duplicate","nsfw","copyright","spam","other"];
+  const severities: Severity[] = ["low","medium","high"];
+  return Array.from({ length: n }).map((_, i) => ({
+    id: `sub-${1100 + i}`,
+    userEmail: `user${i}@demo.com`,
+    createdAt: new Date(Date.now() - (i+6)*36e5).toISOString(),
+    flaggedAt: new Date(Date.now() - (i+2)*36e5).toISOString(),
+    title: `Item ${i+1}`,
+    images: Array.from({ length: (i % 3) + 1 }).map((__, j) => ({
+      id: `img-${i}-${j}`,
+      url: `https://picsum.photos/seed/f${i}-${j}/240/240`
+    })),
+    reasons: [reasons[i % reasons.length]],
+    severity: severities[i % severities.length],
+    notes: i % 5 === 0 ? "Auto-detector: potential duplicate." : undefined,
+    status: "open",
+  }));
+}
+
+export function mockSystemAlerts(n = 14): SystemAlert[] {
+  const types: SystemAlert["type"][] = ["missing_profile","payment_issue","quota_exceeded","other"];
+  const sev: Severity[] = ["low","medium","high"];
+  return Array.from({ length: n }).map((_, i) => ({
+    id: `sa-${1000 + i}`,
+    type: types[i % types.length],
+    userEmail: i % 3 === 0 ? `user${i}@demo.com` : undefined,
+    createdAt: new Date(Date.now() - (i+1)*18e5).toISOString(),
+    message: i % 3 === 0 ? "User missing billing address." : i % 3 === 1 ? "Payment retry scheduled." : "Usage exceeded 95% of quota.",
+    severity: sev[i % sev.length],
+    status: "open",
+  }));
+}
+
+export function mockAuditLog(n = 30): AuditRow[] {
+  const actions: AuditRow["action"][] = ["approve","delete","resolve","snooze","bulk_approve","bulk_delete"];
+  return Array.from({ length: n }).map((_, i) => ({
+    id: `log-${i}`,
+    ts: new Date(Date.now() - i*12e5).toISOString(),
+    actor: i % 2 ? "admin@gluu.demo" : "ops@gluu.demo",
+    action: actions[i % actions.length],
+    targetType: i % 2 ? "flag" : "system",
+    targetId: i % 2 ? `sub-${1100 + (i%20)}` : `sa-${1000 + (i%10)}`,
+    meta: { reason: i % 2 ? "duplicate" : "payment_issue" }
+  }));
+}
+
 
