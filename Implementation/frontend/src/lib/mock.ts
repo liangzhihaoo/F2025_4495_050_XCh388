@@ -288,4 +288,88 @@ export function mockFailedPayments(n = 24): FailedPayment[] {
   });
 }
 
+// Usage Analytics Types and Mock Generators
+export type UsagePoint = { date: string; value: number }; // ISO date, daily
+
+export type UserQuotaRow = {
+  id: string;
+  email: string;
+  plan: "Free" | "Client Plus" | "Enterprise";
+  uploadsThisPeriod: number;
+  quota: number;          // plan limit for the period
+  pct: number;            // uploadsThisPeriod / quota
+  lastActive: string;     // ISO
+};
+
+export type UsageKpis = {
+  totalUploads: number;       // period sum
+  avgUploadsPerUser: number;  // period avg among active users
+  dau: number;                // yesterday or last day
+  wau: number;                // last 7d unique users
+  mau: number;                // last 30d unique users
+};
+
+const isoDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
+
+export function mockUsageSeries(days = 90, base = 120): UsagePoint[] {
+  const out: UsagePoint[] = [];
+  const today = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const noise = Math.round(base + (Math.sin(i/6) * 20) + Math.random() * 25);
+    out.push({ date: isoDay(d), value: Math.max(0, noise) });
+  }
+  return out;
+}
+
+export function mockSignupsSeries(days = 90, base = 18): UsagePoint[] {
+  const out: UsagePoint[] = [];
+  const today = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const noise = Math.round(base + (Math.cos(i/8) * 6) + Math.random() * 8);
+    out.push({ date: isoDay(d), value: Math.max(0, noise) });
+  }
+  return out;
+}
+
+export function mockActiveUsersSeries(days = 90, base = 220): UsagePoint[] {
+  const out: UsagePoint[] = [];
+  const today = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const noise = Math.round(base + (Math.sin(i/10) * 35) + Math.random() * 20);
+    out.push({ date: isoDay(d), value: Math.max(0, noise) });
+  }
+  return out;
+}
+
+export function mockUsageKpis(series: UsagePoint[], signups: UsagePoint[], activeSeries: UsagePoint[]): UsageKpis {
+  const totalUploads = series.reduce((a, b) => a + b.value, 0);
+  const dau = activeSeries.at(-1)?.value ?? 0;
+  const wau = activeSeries.slice(-7).reduce((a,b) => a + Math.round(b.value/7), 0);   // rough mock
+  const mau = activeSeries.slice(-30).reduce((a,b) => a + Math.round(b.value/30), 0); // rough mock
+  const activeUsersApprox = Math.max(1, activeSeries.at(-1)?.value ?? 1);
+  const avgUploadsPerUser = +(totalUploads / activeUsersApprox).toFixed(2);
+  return { totalUploads, avgUploadsPerUser, dau, wau, mau };
+}
+
+export function mockQuotaList(n = 20): UserQuotaRow[] {
+  return Array.from({ length: n }).map((_, i) => {
+    const plan = i % 7 === 0 ? "Enterprise" : i % 3 === 0 ? "Client Plus" : "Free";
+    const quota = plan === "Enterprise" ? 5000 : plan === "Client Plus" ? 1000 : 200;
+    const uploads = Math.floor(quota * (0.6 + Math.random() * 0.5)); // 60%–110%
+    const pct = uploads / quota;
+    return {
+      id: `u${1000 + i}`,
+      email: `user${i}@demo.com`,
+      plan,
+      uploadsThisPeriod: uploads,
+      quota,
+      pct,
+      lastActive: new Date(Date.now() - Math.random()*7*24*3600*1000).toISOString(),
+    };
+  }).sort((a,b) => b.pct - a.pct);
+}
+
 

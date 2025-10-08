@@ -18,3 +18,7 @@ export const formatDuration = (ms?: number) => {
 
 export const formatCurrency = (v: number, c = "USD") =>
   new Intl.NumberFormat(undefined, { style: "currency", currency: c, maximumFractionDigits: 0 }).format(v);
+
+export const formatNum = (n: number) => new Intl.NumberFormat(undefined).format(n);
+
+export const percent = (x: number, digits = 1) => `${(x*100).toFixed(digits)}%`;
