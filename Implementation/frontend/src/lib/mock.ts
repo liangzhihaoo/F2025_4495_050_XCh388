@@ -222,4 +222,70 @@ export function mockCohortBuckets(days = 14): AggregateBucket[] {
   return res;
 }
 
+// Billing Types and Mock Generators
+export type Plan = "Free" | "Client Plus" | "Enterprise";
+
+export type BillingKpis = {
+  mrr: number;                 // Monthly Recurring Revenue
+  arr: number;                 // Annualized
+  activeSubscribers: number;   // paying subs (excludes Free)
+  arpu: number;                // Avg Revenue Per User (paying)
+  churnRate30d: number;        // last 30d logo churn
+};
+
+export type PlanBucket = { plan: Plan; subscribers: number; mrr: number };
+
+export type FailedPaymentStatus = "Open" | "Retry Scheduled" | "Resolved" | "Canceled";
+
+export type FailedPayment = {
+  id: string;
+  userEmail: string;
+  plan: Plan;
+  amount: number;             // cents or units; we'll treat as dollars for mock
+  reason: string;             // "Card declined", "Insufficient funds", etc.
+  attemptedAt: string;        // ISO
+  nextRetryAt?: string;       // ISO
+  status: FailedPaymentStatus;
+  attempts: number;           // number of tries so far
+};
+
+export function mockBillingKpis(): BillingKpis {
+  const activeSubscribers = 820 + Math.floor(Math.random() * 120);
+  const arpu = 18 + Math.random() * 12; // $
+  const mrr = Math.round(activeSubscribers * arpu);
+  const arr = mrr * 12;
+  const churnRate30d = 0.025 + Math.random() * 0.01; // 2.5%–3.5%
+  return { mrr, arr, activeSubscribers, arpu, churnRate30d };
+}
+
+export function mockPlanBuckets(): PlanBucket[] {
+  const plus = 600 + Math.floor(Math.random() * 120);
+  const ent = 80 + Math.floor(Math.random() * 30);
+  return [
+    { plan: "Client Plus", subscribers: plus, mrr: plus * 20 },
+    { plan: "Enterprise",  subscribers: ent,  mrr: ent  * 120 },
+    { plan: "Free",        subscribers: 1500 + Math.floor(Math.random() * 300), mrr: 0 },
+  ];
+}
+
+export function mockFailedPayments(n = 24): FailedPayment[] {
+  const reasons = ["Card declined", "Insufficient funds", "Expired card", "Network error"];
+  const statuses: FailedPaymentStatus[] = ["Open","Retry Scheduled","Resolved","Canceled"];
+  return Array.from({ length: n }).map((_, i) => {
+    const status = statuses[i % statuses.length];
+    const now = Date.now();
+    return {
+      id: `fp-${1000 + i}`,
+      userEmail: `user${i}@demo.com`,
+      plan: i % 7 === 0 ? "Enterprise" : "Client Plus",
+      amount: (i % 7 === 0 ? 120 : 20),
+      reason: reasons[i % reasons.length],
+      attemptedAt: new Date(now - (i + 1) * 36e5).toISOString(),
+      nextRetryAt: status === "Retry Scheduled" ? new Date(now + (i + 2) * 36e5).toISOString() : undefined,
+      status,
+      attempts: (i % 3) + 1,
+    };
+  });
+}
+
 

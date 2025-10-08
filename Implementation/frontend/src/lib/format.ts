@@ -15,3 +15,6 @@ export const formatDuration = (ms?: number) => {
   const parts = [h ? `${h}h` : "", m ? `${m}m` : "", sec ? `${sec}s` : ""].filter(Boolean);
   return parts.join(" ");
 };
+
+export const formatCurrency = (v: number, c = "USD") =>
+  new Intl.NumberFormat(undefined, { style: "currency", currency: c, maximumFractionDigits: 0 }).format(v);
