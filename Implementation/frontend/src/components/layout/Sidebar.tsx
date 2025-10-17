@@ -24,7 +24,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
           <span>Uploads</span>
         </NavLink>
         <NavLink to="/analytics/onboarding" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? 'bg-gray-100 text-gray-900' : 'hover:bg-gray-50'}`}>
-          <Route className="h-4 w-4" />
+          <BarChart3 className="h-4 w-4" />
           <span>Onboarding Funnel</span>
         </NavLink>
         <NavLink to="/testimonials" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? 'bg-gray-100 text-gray-900' : 'hover:bg-gray-50'}`}>
