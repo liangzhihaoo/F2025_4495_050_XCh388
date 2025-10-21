@@ -35,7 +35,6 @@ export default function UsersList() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        // Minimal handling: log and keep empty list
         console.error("Failed to fetch users:", error.message);
         return;
       }
@@ -51,7 +50,6 @@ export default function UsersList() {
     };
   }, []);
 
-  // Handle user operations
   const handlePlanChange = (userId: string, newPlan: User["plan"]) => {
     setUsers((prevUsers) =>
       prevUsers.map((user) =>
