@@ -17,20 +17,19 @@ export default function UsersList() {
     let isMounted = true;
 
     const fetchUsers = async () => {
-      // Use column aliases to map snake_case to the existing User type
       const { data, error } = await supabase
         .from("users")
         .select(
           `
           id,
-          name,
           email,
+          first_name,
+          last_name,
+          phone,
+          stripe_customer_id,
           plan,
-          status,
-          createdAt:created_at,
-          lastActive:last_active,
-          uploads,
-          onboarding
+          upload_limit,
+          created_at
         `
         )
         .order("created_at", { ascending: false });
@@ -42,7 +41,7 @@ export default function UsersList() {
       }
 
       if (isMounted && data) {
-        setUsers(data as unknown as User[]);
+        setUsers(data as User[]);
       }
     };
 
@@ -87,12 +86,16 @@ export default function UsersList() {
   const filtered = useMemo(() => {
     return users.filter((u) => {
       const q = search.trim().toLowerCase();
+      const fullName = [u.first_name, u.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
       const matchesQuery =
-        q === "" ||
-        u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q);
-      const matchesPlan = plan === "" || u.plan === (plan as any);
-      const matchesStatus = status === "" || u.status === (status as any);
+        q === "" || fullName.includes(q) || u.email.toLowerCase().includes(q);
+      const matchesPlan = plan === "" || u.plan === plan;
+      const matchesStatus =
+        status === "" ||
+        (status === "Active" ? !!u.stripe_customer_id : !u.stripe_customer_id);
       return matchesQuery && matchesPlan && matchesStatus;
     });
   }, [users, search, plan, status]);

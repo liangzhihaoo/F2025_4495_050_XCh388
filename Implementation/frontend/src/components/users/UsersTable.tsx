@@ -52,17 +52,7 @@ export default function UsersTable({
     );
   }
 
-  const statusClass = (s: User["status"]) =>
-    s === "Active" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700";
-
   const planClass = "bg-blue-50 text-blue-700";
-
-  const onboardingClass = (o: User["onboarding"]) =>
-    o === "Complete"
-      ? "bg-emerald-50 text-emerald-700"
-      : o === "Partial"
-      ? "bg-amber-50 text-amber-700"
-      : "bg-gray-50 text-gray-700";
 
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -90,7 +80,9 @@ export default function UsersTable({
                   />
                   <div className="min-w-0">
                     <div className="text-gray-900 font-medium truncate">
-                      {u.name}
+                      {u.first_name && u.last_name
+                        ? `${u.first_name} ${u.last_name}`
+                        : u.first_name || u.last_name || "Unnamed User"}
                     </div>
                     <div className="text-xs text-gray-500 truncate">
                       {u.email}
@@ -102,28 +94,36 @@ export default function UsersTable({
                 <span
                   className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${planClass}`}
                 >
-                  {u.plan}
+                  {u.plan || "No Plan"}
                 </span>
               </td>
               <td className="px-4 py-3">
                 <span
-                  className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${statusClass(
-                    u.status
-                  )}`}
+                  className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
+                    u.stripe_customer_id
+                      ? "bg-green-50 text-green-700"
+                      : "bg-gray-50 text-gray-700"
+                  }`}
                 >
-                  {u.status}
+                  {u.stripe_customer_id ? "Active" : "Inactive"}
                 </span>
               </td>
-              <td className="px-4 py-3 text-gray-700">{u.createdAt}</td>
-              <td className="px-4 py-3 text-gray-700">{u.lastActive}</td>
-              <td className="px-4 py-3 text-gray-700">{u.uploads}</td>
+              <td className="px-4 py-3 text-gray-700">
+                {u.created_at
+                  ? new Date(u.created_at).toLocaleDateString()
+                  : "N/A"}
+              </td>
+              <td className="px-4 py-3 text-gray-700">{u.phone || "N/A"}</td>
+              <td className="px-4 py-3 text-gray-700">{u.upload_limit || 0}</td>
               <td className="px-4 py-3">
                 <span
-                  className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${onboardingClass(
-                    u.onboarding
-                  )}`}
+                  className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                    u.upload_limit
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-gray-50 text-gray-700"
+                  }`}
                 >
-                  {u.onboarding}
+                  {u.upload_limit ? "Limit Set" : "No Limit"}
                 </span>
               </td>
               <td className="px-4 py-3">
