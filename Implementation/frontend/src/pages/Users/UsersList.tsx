@@ -1,63 +1,102 @@
-import { useMemo, useState } from 'react'
-import { mockUsers, type User } from '../../lib/mock'
-import UserFilters from '../../components/users/UserFilters'
-import UsersTable from '../../components/users/UsersTable'
-import UserDetailDrawer from '../../components/users/UserDetailDrawer'
+import { useEffect, useMemo, useState } from "react";
+import { type User } from "../../lib/mock";
+import UserFilters from "../../components/users/UserFilters";
+import UsersTable from "../../components/users/UsersTable";
+import UserDetailDrawer from "../../components/users/UserDetailDrawer";
+import supabase from "../../lib/supabaseClient";
 
 export default function UsersList() {
-  const [search, setSearch] = useState('')
-  const [plan, setPlan] = useState('')
-  const [status, setStatus] = useState('')
-  const [selected, setSelected] = useState<User | null>(null)
-  const [users, setUsers] = useState<User[]>([])
+  const [search, setSearch] = useState("");
+  const [plan, setPlan] = useState("");
+  const [status, setStatus] = useState("");
+  const [selected, setSelected] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
 
-  // Initialize users on component mount
-  useMemo(() => {
-    setUsers(mockUsers(20))
-  }, [])
+  // Initialize users from Supabase on component mount
+  useEffect(() => {
+    let isMounted = true;
 
-  // Handle user operations
-  const handlePlanChange = (userId: string, newPlan: User['plan']) => {
-    setUsers(prevUsers => 
-      prevUsers.map(user => 
+    const fetchUsers = async () => {
+      const { data, error } = await supabase
+        .from("users")
+        .select(
+          `
+          id,
+          email,
+          first_name,
+          last_name,
+          phone,
+          stripe_customer_id,
+          plan,
+          upload_limit,
+          created_at
+        `
+        )
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Failed to fetch users:", error.message);
+        return;
+      }
+
+      if (isMounted && data) {
+        setUsers(data as User[]);
+      }
+    };
+
+    fetchUsers();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handlePlanChange = (userId: string, newPlan: User["plan"]) => {
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
         user.id === userId ? { ...user, plan: newPlan } : user
       )
-    )
-    // Update selected user if it's the one being changed
+    );
     if (selected?.id === userId) {
-      setSelected(prev => prev ? { ...prev, plan: newPlan } : null)
+      setSelected((prev) => (prev ? { ...prev, plan: newPlan } : null));
     }
-  }
+  };
 
   const handleDeactivate = (userId: string) => {
-    setUsers(prevUsers => 
-      prevUsers.map(user => 
-        user.id === userId ? { ...user, status: 'Suspended' as const } : user
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
+        user.id === userId ? { ...user, status: "Suspended" as const } : user
       )
-    )
-    // Update selected user if it's the one being deactivated
+    );
     if (selected?.id === userId) {
-      setSelected(prev => prev ? { ...prev, status: 'Suspended' as const } : null)
+      setSelected((prev) =>
+        prev ? { ...prev, status: "Suspended" as const } : null
+      );
     }
-  }
+  };
 
   const handleDelete = (userId: string) => {
-    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId))
-    // Close drawer if the deleted user was selected
+    setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
     if (selected?.id === userId) {
-      setSelected(null)
+      setSelected(null);
     }
-  }
+  };
 
   const filtered = useMemo(() => {
     return users.filter((u) => {
-      const q = search.trim().toLowerCase()
-      const matchesQuery = q === '' || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
-      const matchesPlan = plan === '' || u.plan === (plan as any)
-      const matchesStatus = status === '' || u.status === (status as any)
-      return matchesQuery && matchesPlan && matchesStatus
-    })
-  }, [users, search, plan, status])
+      const q = search.trim().toLowerCase();
+      const fullName = [u.first_name, u.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      const matchesQuery =
+        q === "" || fullName.includes(q) || u.email.toLowerCase().includes(q);
+      const matchesPlan = plan === "" || u.plan === plan;
+      const matchesStatus =
+        status === "" ||
+        (status === "Active" ? !!u.stripe_customer_id : !u.stripe_customer_id);
+      return matchesQuery && matchesPlan && matchesStatus;
+    });
+  }, [users, search, plan, status]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -70,22 +109,20 @@ export default function UsersList() {
         status={status}
         onStatus={setStatus}
       />
-      <UsersTable 
-        users={filtered} 
+      <UsersTable
+        users={filtered}
         onView={setSelected}
         onPlanChange={handlePlanChange}
         onDeactivate={handleDeactivate}
         onDelete={handleDelete}
       />
-      <UserDetailDrawer 
-        user={selected} 
+      <UserDetailDrawer
+        user={selected}
         onClose={() => setSelected(null)}
         onPlanChange={handlePlanChange}
         onDeactivate={handleDeactivate}
         onDelete={handleDelete}
       />
     </div>
-  )
+  );
 }
-
-
