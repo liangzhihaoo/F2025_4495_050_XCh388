@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Users, Upload, Route, MessageSquare, CreditCard, BarChart3, Bell } from 'lucide-react'
+import { Home, Users, Upload, MessageSquare, CreditCard, BarChart3, Bell } from 'lucide-react'
 
 const linkBase = 'flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors text-gray-600 no-underline'
 
