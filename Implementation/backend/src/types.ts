@@ -1,4 +1,4 @@
-export type Plan = "free" | "client_plus";
+export type Plan = "Free" | "Client Plus";
 
 export interface UsersRow {
   id: string;
