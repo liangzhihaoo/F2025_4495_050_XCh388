@@ -27,7 +27,7 @@ export async function getAppUser(userId: string) {
 
 export async function updateUserPlanAndLimit(
   userId: string,
-  plan: "free" | "client_plus",
+  plan: "Free" | "Client Plus",
   uploadLimit: number,
   stripeCustomerId?: string | null
 ) {

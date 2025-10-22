@@ -2,11 +2,11 @@
 import { env } from "../env.js";
 
 export const PLANS = {
-  FREE: "free",
-  PLUS: "client_plus",
+  FREE: "Free",
+  PLUS: "Client Plus",
 } as const;
 
-export function uploadLimitFor(plan: "free" | "client_plus") {
+export function uploadLimitFor(plan: "Free" | "Client Plus") {
   return plan === PLANS.PLUS
     ? env.PLAN_PLUS_UPLOAD_LIMIT
     : env.PLAN_FREE_UPLOAD_LIMIT;

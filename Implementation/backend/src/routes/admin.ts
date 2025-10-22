@@ -22,7 +22,7 @@ export const adminRouter = Router();
 
 /**
  * Change plan (upgrade/downgrade) without redirecting to Stripe pages.
- * - upgrade to client_plus: ensure customer, ensure/default payment method, upsert subscription
+ * - upgrade to client plus: ensure customer, ensure/default payment method, upsert subscription
  * - downgrade to free: cancel all active subscriptions immediately
  * Also updates Supabase users table.
  */
