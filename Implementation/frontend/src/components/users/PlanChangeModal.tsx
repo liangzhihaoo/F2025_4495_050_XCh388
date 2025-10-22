@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { User } from "../../lib/mock";
+import { changePlan } from "../../lib/adminApi";
 
 type Props = {
   user: User | null;
@@ -48,11 +49,14 @@ export default function PlanChangeModal({
     setIsChanging(true);
     try {
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // await new Promise((resolve) => setTimeout(resolve, 1000));
+      await changePlan(user.id, selectedPlan);
       onPlanChange(user.id, selectedPlan);
+      alert(`Plan changed to: ${selectedPlan}`);
       onClose();
-    } catch (error) {
-      console.error("Failed to change plan:", error);
+    } catch (error: any) {
+      console.error("Failed to change plan:", error?.message);
+      alert(`Failed to change plan: ${error?.message}`);
     } finally {
       setIsChanging(false);
     }
