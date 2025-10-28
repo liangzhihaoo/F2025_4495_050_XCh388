@@ -7,7 +7,7 @@ import FunnelAnalytics from './pages/Analytics/Funnel'
 import Testimonials from './pages/Testimonials/Testimonials'
 import Billing from './pages/Analytics/Billing'
 import Usage from './pages/Analytics/Usage'
-import Alerts from './pages/Alerts/Alerts'
+// import Alerts from './pages/Alerts/Alerts' // Temporarily hidden
 
 export default function AppRoutes() {
   return (
@@ -20,7 +20,7 @@ export default function AppRoutes() {
         <Route path="/testimonials" element={<Testimonials />} />
         <Route path="/analytics/billing" element={<Billing />} />
         <Route path="/analytics/usage" element={<Usage />} />
-        <Route path="/alerts" element={<Alerts />} />
+        {/* <Route path="/alerts" element={<Alerts />} /> */} {/* Temporarily hidden */}
       </Route>
     </Routes>
   )

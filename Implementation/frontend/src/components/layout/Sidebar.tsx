@@ -39,10 +39,12 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
           <BarChart3 className="h-4 w-4" />
           <span>Usage Stats</span>
         </NavLink>
+        {/* Temporarily hidden - Alerts page
         <NavLink to="/alerts" onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? 'bg-gray-100 text-gray-900' : 'hover:bg-gray-50'}`}>
           <Bell className="h-4 w-4" />
           <span>Alerts</span>
         </NavLink>
+        */}
       </nav>
     </aside>
   )
