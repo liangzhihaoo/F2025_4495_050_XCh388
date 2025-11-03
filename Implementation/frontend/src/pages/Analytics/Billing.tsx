@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   mockBillingKpis, 
   mockPlanBuckets, 
-  mockFailedPayments
 } from "../../lib/mock";
 import type { 
   FailedPayment, 
@@ -15,14 +16,20 @@ import { PlanDistributionPie } from "../../components/billing/PlanDistributionPi
 import { FailuresTable } from "../../components/billing/FailuresTable";
 import { ActionConfirmModal } from "../../components/billing/ActionConfirmModal";
 import type { ActionKind } from "../../components/billing/ActionConfirmModal";
+import Paginator from "../../components/ui/Paginator";
+import { fetchFailedPayments } from "../../services/billing";
+import { trackPagination } from "../../lib/posthog";
+
+const paginationOn = import.meta.env.VITE_FEATURE_PAGINATION !== "false";
 
 export default function Billing() {
-  // Local state
+  const [params, setParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<FiltersValue>({
-    range: "30d",
-    plan: "all",
-    status: "all",
-    q: "",
+    range: (params.get("range") as any) ?? "30d",
+    plan: (params.get("plan") as any) ?? "all",
+    status: (params.get("status") as any) ?? "all",
+    q: params.get("q") ?? "",
   });
 
   const [confirm, setConfirm] = useState<{
@@ -35,32 +42,43 @@ export default function Billing() {
     row: null,
   });
 
-  // Mock data
-  const kpis = useMemo(() => mockBillingKpis(), []);
-  const buckets = useMemo(() => mockPlanBuckets(), []);
-  const [failures, setFailures] = useState<FailedPayment[]>(() => mockFailedPayments(24));
+  const [page, setPage] = useState(Number(params.get("page") ?? 1));
+  const [pageSize, setPageSize] = useState(Number(params.get("pageSize") ?? 20));
 
-  // Derived: filtered failures
-  const filteredFailures = useMemo(() => {
-    return failures.filter((failure) => {
-      // Plan filter
-      if (filters.plan !== "all" && failure.plan !== filters.plan) {
-        return false;
-      }
+  // Sync URL params
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    next.set("page", String(page));
+    next.set("pageSize", String(pageSize));
+    if (filters.range !== "30d") next.set("range", filters.range);
+    else next.delete("range");
+    if (filters.plan !== "all") next.set("plan", filters.plan);
+    else next.delete("plan");
+    if (filters.status !== "all") next.set("status", filters.status);
+    else next.delete("status");
+    if (filters.q) next.set("q", filters.q);
+    else next.delete("q");
+    setParams(next, { replace: true });
+  }, [page, pageSize, filters, params, setParams]);
 
-      // Status filter
-      if (filters.status !== "all" && failure.status !== filters.status) {
-        return false;
-      }
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (page !== 1) setPage(1);
+  }, [filters.plan, filters.status, filters.q]);
 
-      // Search filter
-      if (filters.q && !failure.userEmail.toLowerCase().includes(filters.q.toLowerCase())) {
-        return false;
-      }
+  // Fetch failed payments with React Query
+  const { data, isFetching } = useQuery({
+    queryKey: ["failedPayments", { page, pageSize, filters }],
+    queryFn: () => fetchFailedPayments({ page, pageSize, filters }),
+    placeholderData: (previousData) => previousData,
+  });
 
-      return true;
-    });
-  }, [failures, filters]);
+  const failures = data?.items ?? [];
+  const total = data?.total ?? 0;
+
+  // Mock data for KPIs and charts (these don't need pagination)
+  const kpis = mockBillingKpis();
+  const buckets = mockPlanBuckets();
 
   // Handlers
   const handleAction = (action: ActionKind, row: FailedPayment) => {
@@ -68,36 +86,42 @@ export default function Billing() {
   };
 
   const handleConfirm = (row: FailedPayment, action: ActionKind) => {
-    setFailures(prevFailures => 
-      prevFailures.map(failure => {
-        if (failure.id === row.id) {
-          switch (action) {
-            case "retry":
-              return {
-                ...failure,
-                status: "Retry Scheduled" as FailedPaymentStatus,
-                nextRetryAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-                attempts: failure.attempts + 1,
-              };
-            case "resolve":
-              return {
-                ...failure,
-                status: "Resolved" as FailedPaymentStatus,
-                nextRetryAt: undefined,
-              };
-            case "cancel":
-              return {
-                ...failure,
-                status: "Canceled" as FailedPaymentStatus,
-                nextRetryAt: undefined,
-              };
-            default:
-              return failure;
+    // Optimistically update the cache
+    queryClient.setQueryData(["failedPayments", { page, pageSize, filters }], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        items: old.items.map((failure: FailedPayment) => {
+          if (failure.id === row.id) {
+            switch (action) {
+              case "retry":
+                return {
+                  ...failure,
+                  status: "Retry Scheduled" as FailedPaymentStatus,
+                  nextRetryAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                  attempts: failure.attempts + 1,
+                };
+              case "resolve":
+                return {
+                  ...failure,
+                  status: "Resolved" as FailedPaymentStatus,
+                  nextRetryAt: undefined,
+                };
+              case "cancel":
+                return {
+                  ...failure,
+                  status: "Canceled" as FailedPaymentStatus,
+                  nextRetryAt: undefined,
+                };
+              default:
+                return failure;
+            }
           }
-        }
-        return failure;
-      })
-    );
+          return failure;
+        }),
+      };
+    });
+    setConfirm({ open: false, action: null, row: null });
   };
 
   const handleCancelConfirm = () => {
@@ -105,38 +129,50 @@ export default function Billing() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-[60vh]">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Billing Analytics</h1>
         <p className="text-gray-600">Monitor subscription KPIs, plan distribution, and failed payments</p>
       </div>
 
-      {/* Filters */}
       <BillingFilters value={filters} onChange={setFilters} />
 
-      {/* KPIs */}
       <BillingKPIs kpis={kpis} />
 
-      {/* Plan Distribution */}
       <PlanDistributionPie buckets={buckets} />
 
-      {/* Failed Payments Table */}
       <div>
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Failed Payments Queue</h2>
           <p className="text-sm text-gray-600">
-            {filteredFailures.length} of {failures.length} failed payments
+            {total} failed payment{total !== 1 ? 's' : ''}
           </p>
         </div>
         <FailuresTable
-          items={filteredFailures}
+          items={failures}
           onRetry={(row) => handleAction("retry", row)}
           onCancel={(row) => handleAction("cancel", row)}
           onResolve={(row) => handleAction("resolve", row)}
         />
+        {paginationOn && (
+          <Paginator
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={(p) => {
+              setPage(p);
+              trackPagination("failedPayments", "navigate", { page: p, pageSize });
+            }}
+            onPageSizeChange={(ps) => {
+              setPage(1);
+              setPageSize(ps);
+              trackPagination("failedPayments", "change_page_size", { pageSize: ps });
+            }}
+            isLoading={isFetching}
+          />
+        )}
       </div>
 
-      {/* Confirm Modal */}
       <ActionConfirmModal
         open={confirm.open}
         action={confirm.action}

@@ -1,13 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { 
-  mockFlagged, 
-  mockSystemAlerts, 
-  mockAuditLog
-} from "../../lib/mock";
-import type { 
-  FlaggedItem, 
-  SystemAlert, 
-  AuditRow
+  type FlaggedItem, 
+  type SystemAlert, 
+  type AuditRow
 } from "../../lib/mock";
 import { AlertsFilters } from "../../components/alerts/AlertsFilters";
 import type { FiltersValue } from "../../components/alerts/AlertsFilters";
@@ -18,14 +15,19 @@ import { SystemAlerts } from "../../components/alerts/SystemAlerts";
 import { AuditLog } from "../../components/alerts/AuditLog";
 import { ConfirmModal } from "../../components/alerts/ConfirmModal";
 import type { ConfirmKind } from "../../components/alerts/ConfirmModal";
+import Paginator from "../../components/ui/Paginator";
+import { fetchFlaggedItems, fetchSystemAlerts, fetchAuditLog } from "../../services/alerts";
+import { trackPagination } from "../../lib/posthog";
+
+const paginationOn = import.meta.env.VITE_FEATURE_PAGINATION !== "false";
 
 export default function Alerts() {
-  // Local state
+  const [params, setParams] = useSearchParams();
   const [filters, setFilters] = useState<FiltersValue>({
-    queue: "flagged",
-    q: "",
-    severity: "all",
-    range: "30d",
+    queue: (params.get("queue") as any) ?? "flagged",
+    q: params.get("q") ?? "",
+    severity: (params.get("severity") as any) ?? "all",
+    range: (params.get("range") as any) ?? "30d",
   });
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -47,62 +49,67 @@ export default function Alerts() {
     payload: undefined,
   });
 
-  // Mock data
-  const [flagged, setFlagged] = useState<FlaggedItem[]>(() => mockFlagged());
-  const [system, setSystem] = useState<SystemAlert[]>(() => mockSystemAlerts());
-  const [audit, setAudit] = useState<AuditRow[]>(() => mockAuditLog());
+  const [page, setPage] = useState(Number(params.get("page") ?? 1));
+  const [pageSize, setPageSize] = useState(Number(params.get("pageSize") ?? 20));
 
-  // Derived: filtered data
-  const filteredFlagged = useMemo(() => {
-    return flagged.filter((item) => {
-      // Search filter
-      if (filters.q && !item.title.toLowerCase().includes(filters.q.toLowerCase()) && 
-          !item.userEmail.toLowerCase().includes(filters.q.toLowerCase()) &&
-          !item.id.toLowerCase().includes(filters.q.toLowerCase())) {
-        return false;
-      }
+  // Sync URL params
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    next.set("page", String(page));
+    next.set("pageSize", String(pageSize));
+    if (filters.queue) next.set("queue", filters.queue);
+    else next.delete("queue");
+    if (filters.q) next.set("q", filters.q);
+    else next.delete("q");
+    if (filters.severity !== "all") next.set("severity", filters.severity);
+    else next.delete("severity");
+    if (filters.range !== "30d") next.set("range", filters.range);
+    else next.delete("range");
+    setParams(next, { replace: true });
+  }, [page, pageSize, filters, params, setParams]);
 
-      // Severity filter
-      if (filters.severity !== "all" && item.severity !== filters.severity) {
-        return false;
-      }
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (page !== 1) setPage(1);
+  }, [filters.q, filters.severity, filters.queue]);
 
-      return true;
-    });
-  }, [flagged, filters.q, filters.severity]);
+  // Fetch data based on queue type
+  const flaggedQuery = useQuery({
+    queryKey: ["flagged", { page, pageSize, filters }],
+    queryFn: () => fetchFlaggedItems({ page, pageSize, filters }),
+    placeholderData: (previousData) => previousData,
+    enabled: filters.queue === "flagged",
+  });
 
-  const filteredSystem = useMemo(() => {
-    return system.filter((alert) => {
-      // Search filter
-      if (filters.q && !alert.message.toLowerCase().includes(filters.q.toLowerCase()) &&
-          !alert.id.toLowerCase().includes(filters.q.toLowerCase()) &&
-          !(alert.userEmail?.toLowerCase().includes(filters.q.toLowerCase()) ?? false)) {
-        return false;
-      }
+  const systemQuery = useQuery({
+    queryKey: ["systemAlerts", { page, pageSize, filters }],
+    queryFn: () => fetchSystemAlerts({ page, pageSize, filters }),
+    placeholderData: (previousData) => previousData,
+    enabled: filters.queue === "system",
+  });
 
-      // Severity filter
-      if (filters.severity !== "all" && alert.severity !== filters.severity) {
-        return false;
-      }
+  const auditQuery = useQuery({
+    queryKey: ["auditLog", { page, pageSize, filters }],
+    queryFn: () => fetchAuditLog({ page, pageSize, filters }),
+    placeholderData: (previousData) => previousData,
+    enabled: filters.queue === "audit",
+  });
 
-      return true;
-    });
-  }, [system, filters.q, filters.severity]);
+  const filteredFlagged = flaggedQuery.data?.items ?? [];
+  const flaggedTotal = flaggedQuery.data?.total ?? 0;
+  const filteredSystem = systemQuery.data?.items ?? [];
+  const systemTotal = systemQuery.data?.total ?? 0;
+  const filteredAudit = auditQuery.data?.items ?? [];
+  const auditTotal = auditQuery.data?.total ?? 0;
 
-  const filteredAudit = useMemo(() => {
-    return audit.filter((row) => {
-      // Search filter
-      if (filters.q && !row.actor.toLowerCase().includes(filters.q.toLowerCase()) &&
-          !row.action.toLowerCase().includes(filters.q.toLowerCase()) &&
-          !row.targetId.toLowerCase().includes(filters.q.toLowerCase())) {
-        return false;
-      }
+  const isFetching = filters.queue === "flagged" ? flaggedQuery.isFetching :
+                     filters.queue === "system" ? systemQuery.isFetching :
+                     auditQuery.isFetching;
 
-      return true;
-    });
-  }, [audit, filters.q]);
+  const currentTotal = filters.queue === "flagged" ? flaggedTotal :
+                       filters.queue === "system" ? systemTotal :
+                       auditTotal;
 
-  // Handlers
   const handleToggleSelect = (id: string) => {
     setSelected(prev => {
       const newSet = new Set(prev);
@@ -152,106 +159,10 @@ export default function Alerts() {
   };
 
   const handleConfirm = (kind: ConfirmKind, payload?: any) => {
-    const now = new Date().toISOString();
-    const actor = "admin@gluu.demo"; // In real app, this would be the current user
-
-    switch (kind) {
-      case "approve":
-        if (payload) {
-          setFlagged(prev => prev.map(item => 
-            item.id === payload.id ? { ...item, status: "approved" as const } : item
-          ));
-          setAudit(prev => [...prev, {
-            id: `log-${Date.now()}`,
-            ts: now,
-            actor,
-            action: "approve",
-            targetType: "flag",
-            targetId: payload.id,
-            meta: { reason: "manual_approval" }
-          }]);
-        }
-        break;
-
-      case "delete":
-        if (payload) {
-          setFlagged(prev => prev.filter(item => item.id !== payload.id));
-          setAudit(prev => [...prev, {
-            id: `log-${Date.now()}`,
-            ts: now,
-            actor,
-            action: "delete",
-            targetType: "flag",
-            targetId: payload.id,
-            meta: { reason: "manual_deletion" }
-          }]);
-        }
-        break;
-
-      case "bulk_approve":
-        setFlagged(prev => prev.map(item => 
-          selected.has(item.id) ? { ...item, status: "approved" as const } : item
-        ));
-        setAudit(prev => [...prev, {
-          id: `log-${Date.now()}`,
-          ts: now,
-          actor,
-          action: "bulk_approve",
-          targetType: "flag",
-          targetId: "multiple",
-          meta: { count: selected.size, ids: Array.from(selected) }
-        }]);
-        setSelected(new Set());
-        break;
-
-      case "bulk_delete":
-        setFlagged(prev => prev.filter(item => !selected.has(item.id)));
-        setAudit(prev => [...prev, {
-          id: `log-${Date.now()}`,
-          ts: now,
-          actor,
-          action: "bulk_delete",
-          targetType: "flag",
-          targetId: "multiple",
-          meta: { count: selected.size, ids: Array.from(selected) }
-        }]);
-        setSelected(new Set());
-        break;
-
-      case "resolve":
-        if (payload) {
-          setSystem(prev => prev.map(alert => 
-            alert.id === payload.id ? { ...alert, status: "resolved" as const } : alert
-          ));
-          setAudit(prev => [...prev, {
-            id: `log-${Date.now()}`,
-            ts: now,
-            actor,
-            action: "resolve",
-            targetType: "system",
-            targetId: payload.id,
-            meta: { type: payload.type }
-          }]);
-        }
-        break;
-
-      case "snooze":
-        if (payload) {
-          setSystem(prev => prev.map(alert => 
-            alert.id === payload.id ? { ...alert, status: "snoozed" as const } : alert
-          ));
-          setAudit(prev => [...prev, {
-            id: `log-${Date.now()}`,
-            ts: now,
-            actor,
-            action: "snooze",
-            targetType: "system",
-            targetId: payload.id,
-            meta: { type: payload.type, duration: "24h" }
-          }]);
-        }
-        break;
-    }
+    // In a real app, this would make API calls
+    // For now, just close the modal
+    setConfirm({ open: false, kind: null, payload: undefined });
+    // Invalidate queries to refetch
   };
 
   const handleCancelConfirm = () => {
@@ -259,19 +170,16 @@ export default function Alerts() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-[60vh]">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Moderation & Alerts</h1>
         <p className="text-gray-600">Manage flagged content, system alerts, and audit logs</p>
       </div>
 
-      {/* Filters */}
       <AlertsFilters value={filters} onChange={setFilters} />
 
-      {/* Conditional Content Based on Queue */}
       {filters.queue === "flagged" && (
         <>
-          {/* Bulk Actions Bar */}
           <BulkBar
             count={selected.size}
             onBulkApprove={handleBulkApprove}
@@ -279,7 +187,6 @@ export default function Alerts() {
             onClear={handleClearSelection}
           />
 
-          {/* Flagged Queue */}
           <FlaggedQueue
             rows={filteredFlagged}
             selected={selected}
@@ -289,7 +196,24 @@ export default function Alerts() {
             onDelete={handleDelete}
           />
 
-          {/* Flag Detail Drawer */}
+          {paginationOn && (
+            <Paginator
+              page={page}
+              pageSize={pageSize}
+              total={flaggedTotal}
+              onPageChange={(p) => {
+                setPage(p);
+                trackPagination("flagged", "navigate", { page: p, pageSize });
+              }}
+              onPageSizeChange={(ps) => {
+                setPage(1);
+                setPageSize(ps);
+                trackPagination("flagged", "change_page_size", { pageSize: ps });
+              }}
+              isLoading={isFetching}
+            />
+          )}
+
           <FlagDetailDrawer
             item={drawer.item}
             open={drawer.open}
@@ -301,18 +225,55 @@ export default function Alerts() {
       )}
 
       {filters.queue === "system" && (
-        <SystemAlerts
-          rows={filteredSystem}
-          onResolve={handleResolve}
-          onSnooze={handleSnooze}
-        />
+        <>
+          <SystemAlerts
+            rows={filteredSystem}
+            onResolve={handleResolve}
+            onSnooze={handleSnooze}
+          />
+          {paginationOn && (
+            <Paginator
+              page={page}
+              pageSize={pageSize}
+              total={systemTotal}
+              onPageChange={(p) => {
+                setPage(p);
+                trackPagination("systemAlerts", "navigate", { page: p, pageSize });
+              }}
+              onPageSizeChange={(ps) => {
+                setPage(1);
+                setPageSize(ps);
+                trackPagination("systemAlerts", "change_page_size", { pageSize: ps });
+              }}
+              isLoading={isFetching}
+            />
+          )}
+        </>
       )}
 
       {filters.queue === "audit" && (
-        <AuditLog rows={filteredAudit} />
+        <>
+          <AuditLog rows={filteredAudit} />
+          {paginationOn && (
+            <Paginator
+              page={page}
+              pageSize={pageSize}
+              total={auditTotal}
+              onPageChange={(p) => {
+                setPage(p);
+                trackPagination("auditLog", "navigate", { page: p, pageSize });
+              }}
+              onPageSizeChange={(ps) => {
+                setPage(1);
+                setPageSize(ps);
+                trackPagination("auditLog", "change_page_size", { pageSize: ps });
+              }}
+              isLoading={isFetching}
+            />
+          )}
+        </>
       )}
 
-      {/* Confirm Modal */}
       <ConfirmModal
         open={confirm.open}
         kind={confirm.kind}

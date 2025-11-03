@@ -161,7 +161,7 @@ export default function Usage() {
 
         {/* Users Near Quota */}
         <ChartCard title="Users Near Quota">
-          <QuotaList rows={visibleRows} />
+          <QuotaList filters={{ plan: filters.plan, q: filters.q }} />
         </ChartCard>
       </div>
     </div>

@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import type { User } from "../../lib/mock";
 import PlanChangeModal from "./PlanChangeModal";
 import UserActionsModal from "./UserActionsModal";
-import Pagination from "./Pagination";
 
 type Props = {
   users: User[];
@@ -10,7 +9,6 @@ type Props = {
   onPlanChange: (userId: string, newPlan: User["plan"]) => void;
   onDeactivate: (userId: string) => void;
   onDelete: (userId: string) => void;
-  pageSize?: number;
 };
 
 export default function UsersTable({
@@ -19,30 +17,10 @@ export default function UsersTable({
   onPlanChange,
   onDeactivate,
   onDelete,
-  pageSize = 10,
 }: Props) {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [showActionsModal, setShowActionsModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
-  // pagination states inside table
-  const [page, setPage] = useState(1);
-  const total = users?.length ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
-  // Clamp page when data length changes (e.g., filters updated)
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-    if (total === 0 && page !== 1) setPage(1);
-  }, [total, totalPages, page]);
-
-  // Slice users for current page
-  const start = (page - 1) * pageSize;
-  const end = Math.min(start + pageSize, total);
-  const pagedUsers = useMemo(
-    () => users.slice(start, start + pageSize),
-    [users, start, pageSize]
-  );
 
   if (!users || users.length === 0) {
     return (
@@ -70,7 +48,7 @@ export default function UsersTable({
           </tr>
         </thead>
         <tbody className="text-sm">
-          {pagedUsers.map((u, idx) => (
+          {users.map((u, idx) => (
             <tr key={u.id} className={idx % 2 === 1 ? "odd:bg-gray-50" : ""}>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
@@ -159,17 +137,6 @@ export default function UsersTable({
         </tbody>
       </table>
 
-      {/* footer (status + pagination) */}
-      <div className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 justify-center-safe">
-        <div className="text-sm text-gray-600">
-          {total === 0 ? "No results" : `${start + 1}–${end} of ${total}`}
-        </div>
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-        />
-      </div>
 
       <PlanChangeModal
         user={selectedUser}

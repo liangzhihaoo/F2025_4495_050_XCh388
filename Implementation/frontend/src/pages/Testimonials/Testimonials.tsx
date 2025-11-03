@@ -1,60 +1,63 @@
-import { useState, useMemo } from 'react'
-import { mockTestimonials, type Testimonial } from '../../lib/mock'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import type { Testimonial } from '../../lib/mock'
 import TestimonialFilters, { type FiltersValue } from '../../components/testimonials/TestimonialFilters'
 import TestimonialCard from '../../components/testimonials/TestimonialCard'
 import TestimonialForm, { type FormMode } from '../../components/testimonials/TestimonialForm'
 import DeleteConfirmModal from '../../components/testimonials/DeleteConfirmModal'
+import Paginator from '../../components/ui/Paginator'
+import { fetchTestimonials } from '../../services/testimonials'
+import { trackPagination } from '../../lib/posthog'
+
+const paginationOn = import.meta.env.VITE_FEATURE_PAGINATION !== "false";
 
 export default function Testimonials() {
-  // Data
-  const [items, setItems] = useState<Testimonial[]>(() => mockTestimonials())
-
-  // UI state
+  const [params, setParams] = useSearchParams();
   const [filters, setFilters] = useState<FiltersValue>({
-    q: '',
-    status: 'all',
-    featuredOnly: false,
-    source: 'all'
+    q: params.get("q") ?? '',
+    status: (params.get("status") as any) ?? 'all',
+    featuredOnly: params.get("featuredOnly") === 'true',
+    source: (params.get("source") as any) ?? 'all'
   })
   const [editing, setEditing] = useState<Testimonial | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [formMode, setFormMode] = useState<FormMode>('create')
   const [toDelete, setToDelete] = useState<Testimonial | null>(null)
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [page, setPage] = useState(Number(params.get("page") ?? 1))
+  const [pageSize, setPageSize] = useState(Number(params.get("pageSize") ?? 20))
 
-  // Filter testimonials
-  const filteredItems = useMemo(() => {
-    return items.filter(item => {
-      // Search filter
-      if (filters.q.trim()) {
-        const query = filters.q.toLowerCase()
-        const matchesSearch = 
-          item.authorName.toLowerCase().includes(query) ||
-          item.company?.toLowerCase().includes(query) ||
-          item.quote.toLowerCase().includes(query)
-        if (!matchesSearch) return false
-      }
+  // Sync URL params
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    next.set("page", String(page));
+    next.set("pageSize", String(pageSize));
+    if (filters.q) next.set("q", filters.q);
+    else next.delete("q");
+    if (filters.status !== 'all') next.set("status", filters.status);
+    else next.delete("status");
+    if (filters.featuredOnly) next.set("featuredOnly", "true");
+    else next.delete("featuredOnly");
+    if (filters.source !== 'all') next.set("source", filters.source);
+    else next.delete("source");
+    setParams(next, { replace: true });
+  }, [page, pageSize, filters, params, setParams]);
 
-      // Status filter
-      if (filters.status !== 'all' && item.status !== filters.status) {
-        return false
-      }
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (page !== 1) setPage(1);
+  }, [filters.q, filters.status, filters.featuredOnly, filters.source]);
 
-      // Featured filter
-      if (filters.featuredOnly && !item.featured) {
-        return false
-      }
+  // Fetch testimonials with React Query
+  const { data, isFetching } = useQuery({
+    queryKey: ["testimonials", { page, pageSize, filters }],
+    queryFn: () => fetchTestimonials({ page, pageSize, filters }),
+    placeholderData: (previousData) => previousData,
+  });
 
-      // Source filter
-      if (filters.source !== 'all' && item.source !== filters.source) {
-        return false
-      }
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
 
-      return true
-    })
-  }, [items, filters])
-
-  // Handlers
   const handleFiltersChange = (newFilters: FiltersValue) => {
     setFilters(newFilters)
   }
@@ -72,25 +75,11 @@ export default function Testimonials() {
   }
 
   const handleSubmit = (values: Omit<Testimonial, "id"|"createdAt"|"updatedAt">) => {
-    if (formMode === 'create') {
-      // Create new testimonial
-      const newItem: Testimonial = {
-        ...values,
-        id: `t-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-      setItems(prev => [newItem, ...prev])
-    } else {
-      // Update existing testimonial
-      setItems(prev => prev.map(item => 
-        item.id === editing?.id 
-          ? { ...item, ...values, updatedAt: new Date().toISOString() }
-          : item
-      ))
-    }
+    // In a real app, this would make an API call
+    // For now, just close the form
     setFormOpen(false)
     setEditing(null)
+    // Invalidate queries to refetch
   }
 
   const handleDelete = (item: Testimonial) => {
@@ -98,61 +87,41 @@ export default function Testimonials() {
   }
 
   const handleConfirmDelete = (item: Testimonial) => {
-    setItems(prev => prev.filter(i => i.id !== item.id))
+    // In a real app, this would make an API call
     setToDelete(null)
+    // Invalidate queries to refetch
   }
 
   const handleToggleFeatured = (item: Testimonial) => {
-    setItems(prev => prev.map(i => 
-      i.id === item.id 
-        ? { ...i, featured: !i.featured, updatedAt: new Date().toISOString() }
-        : i
-    ))
-  }
-
-  const handleToggleExpanded = (id: string) => {
-    setExpandedIds(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(id)) {
-        newSet.delete(id)
-      } else {
-        newSet.add(id)
-      }
-      return newSet
-    })
+    // In a real app, this would make an API call
+    // Invalidate queries to refetch
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 min-h-[60vh]">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-gray-900">Testimonials</h1>
         <div className="text-sm text-gray-500">
-          {filteredItems.length} testimonial{filteredItems.length !== 1 ? 's' : ''}
+          {total} testimonial{total !== 1 ? 's' : ''}
           {filters.featuredOnly && ' (featured only)'}
         </div>
       </div>
 
-      {/* Filters */}
       <TestimonialFilters
         value={filters}
         onChange={handleFiltersChange}
         onCreate={handleCreate}
       />
 
-      {/* Content */}
-      {filteredItems.length === 0 ? (
+      {items.length === 0 ? (
         <div className="bg-white rounded-lg shadow-sm p-8 text-center">
           <div className="text-gray-500 text-sm">
-            {items.length === 0 
-              ? 'No testimonials yet. Create your first one!'
-              : 'No testimonials match your filters.'
-            }
+            No testimonials match your filters.
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredItems.map((item) => (
+          {items.map((item) => (
             <TestimonialCard
               key={item.id}
               item={item}
@@ -164,7 +133,24 @@ export default function Testimonials() {
         </div>
       )}
 
-      {/* Modals */}
+      {paginationOn && (
+        <Paginator
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={(p) => {
+            setPage(p);
+            trackPagination("testimonials", "navigate", { page: p, pageSize });
+          }}
+          onPageSizeChange={(ps) => {
+            setPage(1);
+            setPageSize(ps);
+            trackPagination("testimonials", "change_page_size", { pageSize: ps });
+          }}
+          isLoading={isFetching}
+        />
+      )}
+
       <TestimonialForm
         mode={formMode}
         open={formOpen}

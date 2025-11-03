@@ -1,12 +1,46 @@
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import type { UserQuotaRow } from "../../lib/mock";
 import { formatNum, formatDate } from "../../lib/format";
+import Paginator from "../ui/Paginator";
+import { fetchQuotaList } from "../../services/quota";
+import { trackPagination } from "../../lib/posthog";
+
+const paginationOn = import.meta.env.VITE_FEATURE_PAGINATION !== "false";
 
 type Props = {
-  rows: UserQuotaRow[];
-  onLoadMore?: () => void;
+  filters?: { plan?: string; q?: string };
 };
 
-export function QuotaList({ rows, onLoadMore }: Props) {
+export function QuotaList({ filters }: Props) {
+  const [params, setParams] = useSearchParams();
+  const [page, setPage] = useState(Number(params.get("quotaPage") ?? 1));
+  const [pageSize, setPageSize] = useState(Number(params.get("quotaPageSize") ?? 10));
+
+  // Sync URL params (using unique keys to avoid conflicts)
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    next.set("quotaPage", String(page));
+    next.set("quotaPageSize", String(pageSize));
+    setParams(next, { replace: true });
+  }, [page, pageSize, params, setParams]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (page !== 1) setPage(1);
+  }, [filters?.plan, filters?.q]);
+
+  // Fetch quota list with React Query
+  const { data, isFetching } = useQuery({
+    queryKey: ["quotaList", { page, pageSize, filters }],
+    queryFn: () => fetchQuotaList({ page, pageSize, filters }),
+    placeholderData: (previousData) => previousData,
+  });
+
+  const rows = data?.items ?? [];
+  const total = data?.total ?? 0;
+
   if (rows.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-sm p-8">
@@ -84,16 +118,23 @@ export function QuotaList({ rows, onLoadMore }: Props) {
           </tbody>
         </table>
       </div>
-      
-      {onLoadMore && (
-        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-          <button
-            onClick={onLoadMore}
-            className="w-full text-sm text-gray-600 hover:text-gray-800 font-medium"
-          >
-            Load More
-          </button>
-        </div>
+
+      {paginationOn && (
+        <Paginator
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={(p) => {
+            setPage(p);
+            trackPagination("quotaList", "navigate", { page: p, pageSize });
+          }}
+          onPageSizeChange={(ps) => {
+            setPage(1);
+            setPageSize(ps);
+            trackPagination("quotaList", "change_page_size", { pageSize: ps });
+          }}
+          isLoading={isFetching}
+        />
       )}
     </div>
   );
