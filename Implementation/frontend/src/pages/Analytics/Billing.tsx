@@ -1,14 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { 
-  mockBillingKpis, 
-  mockPlanBuckets, 
-} from "../../lib/mock";
-import type { 
-  FailedPayment, 
-  FailedPaymentStatus
-} from "../../lib/mock";
+import type { FailedPaymentStatus } from "../../lib/mock";
 import { BillingFilters } from "../../components/billing/BillingFilters";
 import type { FiltersValue } from "../../components/billing/BillingFilters";
 import { BillingKPIs } from "../../components/billing/BillingKPIs";
@@ -17,7 +10,12 @@ import { FailuresTable } from "../../components/billing/FailuresTable";
 import { ActionConfirmModal } from "../../components/billing/ActionConfirmModal";
 import type { ActionKind } from "../../components/billing/ActionConfirmModal";
 import Paginator from "../../components/ui/Paginator";
-import { fetchFailedPayments } from "../../services/billing";
+import {
+  fetchBillingMetrics,
+  fetchPlanDistribution,
+  fetchFailedPayments
+} from "../../services/billing";
+import type { FailedPayment } from "../../lib/adminApi";
 import { trackPagination } from "../../lib/posthog";
 
 const paginationOn = import.meta.env.VITE_FEATURE_PAGINATION !== "false";
@@ -66,19 +64,40 @@ export default function Billing() {
     if (page !== 1) setPage(1);
   }, [filters.plan, filters.status, filters.q]);
 
+  // Fetch billing metrics (MRR, ARR, ARPU, Active Subscribers, Churn Rate)
+  const { data: metricsData } = useQuery({
+    queryKey: ["billing", "metrics"],
+    queryFn: fetchBillingMetrics,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  // Fetch plan distribution (Free, Client Plus, Enterprise)
+  const { data: planData } = useQuery({
+    queryKey: ["billing", "plan-distribution"],
+    queryFn: fetchPlanDistribution,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+
   // Fetch failed payments with React Query
   const { data, isFetching } = useQuery({
     queryKey: ["failedPayments", { page, pageSize, filters }],
     queryFn: () => fetchFailedPayments({ page, pageSize, filters }),
     placeholderData: (previousData) => previousData,
+    staleTime: 3 * 60 * 1000, // 3 minutes
   });
 
   const failures = data?.items ?? [];
   const total = data?.total ?? 0;
 
-  // Mock data for KPIs and charts (these don't need pagination)
-  const kpis = mockBillingKpis();
-  const buckets = mockPlanBuckets();
+  // Use real data from API
+  const kpis = metricsData ?? {
+    mrr: 0,
+    arr: 0,
+    activeSubscribers: 0,
+    arpu: 0,
+    churnRate30d: 0,
+  };
+  const buckets = planData ?? [];
 
   // Handlers
   const handleAction = (action: ActionKind, row: FailedPayment) => {
