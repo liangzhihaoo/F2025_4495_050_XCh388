@@ -8,6 +8,8 @@ const EnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   STRIPE_SECRET_KEY: z.string().min(10),
   STRIPE_PRICE_CLIENT_PLUS: z.string().min(5),
+  STRIPE_PRICE_ENTERPRISE: z.string().min(5).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(5).optional(),
   PLAN_FREE_UPLOAD_LIMIT: z.coerce.number().default(10),
   PLAN_PLUS_UPLOAD_LIMIT: z.coerce.number().default(200),
 });
@@ -21,6 +23,8 @@ export const env: AppEnv = EnvSchema.parse({
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_PRICE_CLIENT_PLUS: process.env.STRIPE_PRICE_CLIENT_PLUS,
+  STRIPE_PRICE_ENTERPRISE: process.env.STRIPE_PRICE_ENTERPRISE,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   PLAN_FREE_UPLOAD_LIMIT: process.env.PLAN_FREE_UPLOAD_LIMIT,
   PLAN_PLUS_UPLOAD_LIMIT: process.env.PLAN_PLUS_UPLOAD_LIMIT,
 });
