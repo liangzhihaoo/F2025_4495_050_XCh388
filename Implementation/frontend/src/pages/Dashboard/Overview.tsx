@@ -57,6 +57,17 @@ export default function Overview() {
 
   const notifications = useMemo(() => (devEmptyNotifications ? [] : mockNotifications(7)), [devEmptyNotifications])
 
+  // Paying users metric - will be replaced with backend data when ready
+  // TODO: Replace with actual API call when backend endpoint is ready
+  // const { data: payingUsersData } = useQuery({
+  //   queryKey: ['payingUsers'],
+  //   queryFn: () => fetchPayingUsersCount(),
+  // });
+  const payingUsers = useMemo(() => {
+    // Temporary mock data - replace with: payingUsersData?.count ?? 0
+    return 8234;
+  }, []);
+
   useEffect(() => {
     setLoading(true)
     setError(null)
@@ -88,7 +99,12 @@ export default function Overview() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard title="Total Users" value="12,543" trend="+8%" variant="good" />
         <StatCard title="Total Uploads" value="45,892" trend="+3%" variant="good" />
-        <StatCard title="Subscription Health" value="94.2%" trend="-2%" variant="bad" />
+        <StatCard 
+          title="Paying Users" 
+          value={payingUsers.toLocaleString()} 
+          trend="+5%" 
+          variant="good" 
+        />
       </div>
 
       {/* Row 2: Line chart + Notifications */}
