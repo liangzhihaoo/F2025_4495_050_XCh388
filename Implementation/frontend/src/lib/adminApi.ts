@@ -1,5 +1,5 @@
 // Tiny API client hitting /admin routes (dev: Vite proxy injects secret; prod: Admin Proxy injects secret).
-export type Plan = "Free" | "Client Plus" | "Enterprise" | null;
+export type Plan = "Free" | "Client Plus" | "Enterprise";
 
 export interface ChangePlanResponse {
   ok: boolean;
@@ -31,4 +31,76 @@ export async function changePlan(userId: string, plan: Plan) {
     method: "POST",
     body: JSON.stringify({ plan }),
   });
+}
+
+// Billing types
+export interface BillingKpis {
+  mrr: number;
+  arr: number;
+  activeSubscribers: number;
+  arpu: number;
+  churnRate30d: number;
+}
+
+export interface PlanBucket {
+  plan: Plan;
+  subscribers: number;
+  mrr: number;
+}
+
+export interface FailedPayment {
+  id: string;
+  userEmail: string;
+  plan: Plan;
+  amount: number;
+  reason: string;
+  attemptedAt: string;
+  nextRetryAt?: string;
+  status: "Open" | "Retry Scheduled" | "Resolved" | "Canceled";
+  attempts: number;
+}
+
+export interface PageRequest {
+  page: number;
+  pageSize: number;
+  filters?: Record<string, any>;
+}
+
+export interface PageResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+// Get billing metrics (MRR, ARR, ARPU, Active Subscribers, Churn Rate)
+export async function fetchBillingMetrics() {
+  return request<BillingKpis>("/admin/billing/metrics", {
+    method: "GET",
+  });
+}
+
+// Get plan distribution (Free, Client Plus, Enterprise)
+export async function fetchPlanDistribution() {
+  return request<PlanBucket[]>("/admin/billing/plan-distribution", {
+    method: "GET",
+  });
+}
+
+// Get failed payments with pagination and filters
+export async function fetchFailedPayments(params: PageRequest) {
+  const queryParams = new URLSearchParams({
+    page: params.page.toString(),
+    pageSize: params.pageSize.toString(),
+    ...(params.filters?.plan && { plan: params.filters.plan }),
+    ...(params.filters?.status && { status: params.filters.status }),
+    ...(params.filters?.userEmail && { userEmail: params.filters.userEmail }),
+  });
+
+  return request<PageResponse<FailedPayment>>(
+    `/admin/billing/failed-payments?${queryParams}`,
+    {
+      method: "GET",
+    }
+  );
 }

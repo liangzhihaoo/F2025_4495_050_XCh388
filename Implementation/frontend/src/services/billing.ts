@@ -1,35 +1,55 @@
 import type { PageRequest, PageResponse } from "../lib/pagination";
-import { mockFailedPayments, type FailedPayment } from "../lib/mock";
+import * as adminApi from "../lib/adminApi";
 
-// Temporary in-memory fallback until backend supports pagination
-export async function fetchFailedPayments({ page, pageSize, filters }: PageRequest): Promise<PageResponse<FailedPayment>> {
-  await new Promise(resolve => setTimeout(resolve, 100));
-
-  let allItems = mockFailedPayments(100); // Generate enough items for pagination demo
-
-  // Apply filters
-  if (filters?.plan && filters.plan !== "all") {
-    allItems = allItems.filter(item => item.plan === filters.plan);
+// Fetch billing metrics (MRR, ARR, ARPU, Active Subscribers, Churn Rate)
+export async function fetchBillingMetrics() {
+  try {
+    return await adminApi.fetchBillingMetrics();
+  } catch (error) {
+    console.error("Error fetching billing metrics:", error);
+    throw error;
   }
+}
 
-  if (filters?.status && filters.status !== "all") {
-    allItems = allItems.filter(item => item.status === filters.status);
+// Fetch plan distribution (Free, Client Plus, Enterprise)
+export async function fetchPlanDistribution() {
+  try {
+    return await adminApi.fetchPlanDistribution();
+  } catch (error) {
+    console.error("Error fetching plan distribution:", error);
+    throw error;
   }
+}
 
-  if (filters?.q) {
-    const query = filters.q.toLowerCase();
-    allItems = allItems.filter(item => item.userEmail.toLowerCase().includes(query));
+// Fetch failed payments with pagination and filters
+export async function fetchFailedPayments({
+  page,
+  pageSize,
+  filters,
+}: PageRequest): Promise<PageResponse<adminApi.FailedPayment>> {
+  try {
+    // Map filters to API format
+    const apiFilters: Record<string, any> = {};
+
+    if (filters?.plan && filters.plan !== "all") {
+      apiFilters.plan = filters.plan;
+    }
+
+    if (filters?.status && filters.status !== "all") {
+      apiFilters.status = filters.status;
+    }
+
+    if (filters?.q) {
+      apiFilters.userEmail = filters.q;
+    }
+
+    return await adminApi.fetchFailedPayments({
+      page,
+      pageSize,
+      filters: apiFilters,
+    });
+  } catch (error) {
+    console.error("Error fetching failed payments:", error);
+    throw error;
   }
-
-  const total = allItems.length;
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize;
-  const items = allItems.slice(from, to);
-
-  return {
-    items,
-    total,
-    page,
-    pageSize,
-  };
 }
