@@ -18,7 +18,7 @@ export function BillingFilters({ value, onChange }: Props) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 flex flex-wrap items-center gap-3">
+    <div className="bg-white p-4 flex flex-wrap items-center gap-3">
       {/* Date Range */}
       <div className="flex items-center gap-2">
         <label htmlFor="range" className="text-sm font-medium text-gray-700">
@@ -27,7 +27,9 @@ export function BillingFilters({ value, onChange }: Props) {
         <select
           id="range"
           value={value.range}
-          onChange={(e) => handleChange("range", e.target.value as "30d" | "90d" | "180d")}
+          onChange={(e) =>
+            handleChange("range", e.target.value as "30d" | "90d" | "180d")
+          }
           className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="30d">Last 30d</option>
