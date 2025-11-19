@@ -27,7 +27,7 @@ export function FailuresTable({ items, onRetry, onCancel, onResolve }: Props) {
 
   const sortedItems = [...items].sort((a, b) => {
     let aValue: any, bValue: any;
-    
+
     switch (sortField) {
       case "attemptedAt":
         aValue = new Date(a.attemptedAt).getTime();
@@ -52,7 +52,7 @@ export function FailuresTable({ items, onRetry, onCancel, onResolve }: Props) {
 
   const getStatusChip = (status: FailedPayment["status"]) => {
     const baseClasses = "px-2 py-1 text-xs font-medium rounded-full";
-    
+
     switch (status) {
       case "Open":
         return `${baseClasses} bg-red-50 text-red-700`;
@@ -67,32 +67,38 @@ export function FailuresTable({ items, onRetry, onCancel, onResolve }: Props) {
     }
   };
 
-  const SortButton = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
+  const SortButton = ({
+    field,
+    children,
+  }: {
+    field: SortField;
+    children: React.ReactNode;
+  }) => (
     <button
       onClick={() => handleSort(field)}
       className="flex items-center gap-1 text-left font-medium text-gray-900 hover:text-blue-600 focus:outline-none"
     >
       {children}
       {sortField === field && (
-        <span className="text-xs">
-          {sortDirection === "asc" ? "↑" : "↓"}
-        </span>
+        <span className="text-xs">{sortDirection === "asc" ? "↑" : "↓"}</span>
       )}
     </button>
   );
 
   if (items.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-8">
+      <div className="bg-white p-8">
         <div className="text-center">
-          <p className="text-gray-500">No failed payments match your filters.</p>
+          <p className="text-gray-500">
+            No failed payments match your filters.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-white overflow-hidden">
       <div className="overflow-x-auto">
         <table className="table-fixed w-full">
           <thead className="bg-gray-50">
@@ -128,13 +134,14 @@ export function FailuresTable({ items, onRetry, onCancel, onResolve }: Props) {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedItems.map((item, index) => (
-              <tr key={item.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+              <tr
+                key={item.id}
+                className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+              >
                 <td className="px-4 py-4 text-sm text-gray-900">
                   {item.userEmail}
                 </td>
-                <td className="px-4 py-4 text-sm text-gray-900">
-                  {item.plan}
-                </td>
+                <td className="px-4 py-4 text-sm text-gray-900">{item.plan}</td>
                 <td className="px-4 py-4 text-sm text-gray-900">
                   {formatCurrency(item.amount)}
                 </td>
