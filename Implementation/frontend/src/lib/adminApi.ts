@@ -33,6 +33,36 @@ export async function changePlan(userId: string, plan: Plan) {
   });
 }
 
+// Deactivate user account
+export async function deactivateUser(userId: string) {
+  return request<{ ok: boolean; userId: string; status: string; is_active: boolean }>(
+    `/admin/users/${userId}/deactivate`,
+    {
+      method: "POST",
+    }
+  );
+}
+
+// Reactivate user account
+export async function reactivateUser(userId: string) {
+  return request<{ ok: boolean; userId: string; status: string; is_active: boolean }>(
+    `/admin/users/${userId}/reactivate`,
+    {
+      method: "POST",
+    }
+  );
+}
+
+// Delete user account
+export async function deleteUser(userId: string) {
+  return request<{ ok: boolean; userId: string; deleted: boolean }>(
+    `/admin/users/${userId}`,
+    {
+      method: "DELETE",
+    }
+  );
+}
+
 // Billing types
 export interface BillingKpis {
   mrr: number;

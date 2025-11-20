@@ -8,6 +8,7 @@ type Props = {
   onView: (u: User) => void;
   onPlanChange: (userId: string, newPlan: User["plan"]) => void;
   onDeactivate: (userId: string) => void;
+  onReactivate: (userId: string) => void;
   onDelete: (userId: string) => void;
 };
 
@@ -16,6 +17,7 @@ export default function UsersTable({
   onView,
   onPlanChange,
   onDeactivate,
+  onReactivate,
   onDelete,
 }: Props) {
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -78,12 +80,12 @@ export default function UsersTable({
               <td className="px-4 py-3">
                 <span
                   className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
-                    u.stripe_customer_id
+                    u.is_active
                       ? "bg-green-50 text-green-700"
                       : "bg-gray-50 text-gray-700"
                   }`}
                 >
-                  {u.stripe_customer_id ? "Active" : "Inactive"}
+                  {u.is_active ? "Active" : "Inactive"}
                 </span>
               </td>
               <td className="px-4 py-3 text-gray-700">
@@ -149,6 +151,7 @@ export default function UsersTable({
         isOpen={showActionsModal}
         onClose={() => setShowActionsModal(false)}
         onDeactivate={onDeactivate}
+        onReactivate={onReactivate}
         onDelete={onDelete}
       />
     </div>

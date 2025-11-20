@@ -8,7 +8,7 @@ export async function fetchUsers({ page, pageSize, filters, sort }: PageRequest)
 
   let q = supabase
     .from("users")
-    .select("id, email, first_name, last_name, phone, stripe_customer_id, plan, upload_limit, created_at", { count: "exact" })
+    .select("id, email, first_name, last_name, phone, stripe_customer_id, plan, upload_limit, created_at, is_active", { count: "exact" })
     .order("created_at", { ascending: false });
 
   // Apply filters if provided
@@ -21,9 +21,9 @@ export async function fetchUsers({ page, pageSize, filters, sort }: PageRequest)
     q = q.eq("plan", filters.plan);
   }
   if (filters?.status === "Active") {
-    q = q.not("stripe_customer_id", "is", null);
+    q = q.eq("is_active", true);
   } else if (filters?.status === "Inactive") {
-    q = q.is("stripe_customer_id", null);
+    q = q.eq("is_active", false);
   }
 
   // Apply sort if provided

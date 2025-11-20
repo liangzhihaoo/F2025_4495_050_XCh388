@@ -6,4 +6,5 @@ export interface UsersRow {
   stripe_customer_id: string | null;
   plan: Plan;
   upload_limit: number;
+  is_active: boolean;
 }
