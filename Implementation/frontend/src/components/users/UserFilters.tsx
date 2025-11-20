@@ -37,7 +37,7 @@ export default function UserFilters({ search, onSearch, plan, onPlan, status, on
       >
         <option value="">All Statuses</option>
         <option value="Active">Active</option>
-        <option value="Suspended">Suspended</option>
+        <option value="Inactive">Inactive</option>
       </select>
     </div>
   )

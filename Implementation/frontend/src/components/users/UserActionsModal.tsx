@@ -1,11 +1,13 @@
 import { useState } from "react";
 import type { User } from "../../lib/mock";
+import { deactivateUser, reactivateUser, deleteUser } from "../../lib/adminApi";
 
 type Props = {
   user: User | null;
   isOpen: boolean;
   onClose: () => void;
   onDeactivate: (userId: string) => void;
+  onReactivate: (userId: string) => void;
   onDelete: (userId: string) => void;
 };
 
@@ -14,9 +16,10 @@ export default function UserActionsModal({
   isOpen,
   onClose,
   onDeactivate,
+  onReactivate,
   onDelete,
 }: Props) {
-  const [action, setAction] = useState<"deactivate" | "delete" | null>(null);
+  const [action, setAction] = useState<"deactivate" | "reactivate" | "delete" | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [confirmText, setConfirmText] = useState("");
 
@@ -25,12 +28,26 @@ export default function UserActionsModal({
   const handleDeactivate = async () => {
     setIsProcessing(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await deactivateUser(user.id);
       onDeactivate(user.id);
       handleClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to deactivate user:", error);
+      alert(`Failed to deactivate user: ${error?.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReactivate = async () => {
+    setIsProcessing(true);
+    try {
+      await reactivateUser(user.id);
+      onReactivate(user.id);
+      handleClose();
+    } catch (error: any) {
+      console.error("Failed to reactivate user:", error);
+      alert(`Failed to reactivate user: ${error?.message}`);
     } finally {
       setIsProcessing(false);
     }
@@ -39,12 +56,12 @@ export default function UserActionsModal({
   const handleDelete = async () => {
     setIsProcessing(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await deleteUser(user.id);
       onDelete(user.id);
       handleClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete user:", error);
+      alert(`Failed to delete user: ${error?.message}`);
     } finally {
       setIsProcessing(false);
     }
@@ -59,6 +76,8 @@ export default function UserActionsModal({
   const isDeleteConfirmed = action === "delete" && confirmText === "DELETE";
   const isDeactivateConfirmed =
     action === "deactivate" && confirmText === "DEACTIVATE";
+  const isReactivateConfirmed =
+    action === "reactivate" && confirmText === "REACTIVATE";
 
   return (
     <>
@@ -126,43 +145,76 @@ export default function UserActionsModal({
                 </div>
                 <div>
                   <span className="font-medium">Status:</span>{" "}
-                  {user.stripe_customer_id ? "Active" : "Inactive"}
+                  {user.is_active ? "Active" : "Inactive"}
                 </div>
               </div>
             </div>
 
             {!action ? (
               <div className="space-y-3">
-                <button
-                  onClick={() => setAction("deactivate")}
-                  className="w-full p-3 text-left border border-amber-200 rounded-lg hover:bg-amber-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-                      <svg
-                        className="w-4 h-4 text-amber-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"
-                        />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        Deactivate Account
+                {user.is_active ? (
+                  <button
+                    onClick={() => setAction("deactivate")}
+                    className="w-full p-3 text-left border border-amber-200 rounded-lg hover:bg-amber-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                        <svg
+                          className="w-4 h-4 text-amber-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"
+                          />
+                        </svg>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        Suspend user access temporarily
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          Deactivate Account
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Suspend user access temporarily
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setAction("reactivate")}
+                    className="w-full p-3 text-left border border-green-200 rounded-lg hover:bg-green-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                        <svg
+                          className="w-4 h-4 text-green-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          Reactivate Account
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Restore user access to the platform
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                )}
 
                 <button
                   onClick={() => setAction("delete")}
@@ -256,6 +308,70 @@ export default function UserActionsModal({
                         className="flex-1 px-4 py-2 text-sm font-medium text-white bg-amber-600 border border-transparent rounded-md hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isProcessing ? "Deactivating..." : "Deactivate User"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {action === "reactivate" && (
+                  <div>
+                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <svg
+                          className="w-5 h-5 text-green-600 mt-0.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        <div>
+                          <h4 className="font-medium text-green-800">
+                            Reactivate User Account
+                          </h4>
+                          <p className="text-sm text-green-700 mt-1">
+                            This will restore the user's access to the platform.
+                            They will be able to log in and use all features again.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Type{" "}
+                        <span className="font-mono bg-gray-100 px-1 rounded">
+                          REACTIVATE
+                        </span>{" "}
+                        to confirm:
+                      </label>
+                      <input
+                        type="text"
+                        value={confirmText}
+                        onChange={(e) => setConfirmText(e.target.value)}
+                        placeholder="REACTIVATE"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setAction(null)}
+                        className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleReactivate}
+                        disabled={!isReactivateConfirmed || isProcessing}
+                        className="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isProcessing ? "Reactivating..." : "Reactivate User"}
                       </button>
                     </div>
                   </div>

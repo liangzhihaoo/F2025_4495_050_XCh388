@@ -67,6 +67,7 @@ export type User = {
   plan: "Free" | "Client Plus" | "Enterprise" | null;
   upload_limit: number | null;
   created_at: string | null; // ISO timestamp string
+  is_active: boolean;
 };
 
 export function mockUsers(n: number): User[] {
@@ -87,6 +88,7 @@ export function mockUsers(n: number): User[] {
     created_at: new Date(
       Date.now() - Math.floor(Math.random() * 90 * 24 * 60 * 60 * 1000)
     ).toISOString(),
+    is_active: Math.random() > 0.1,
   }));
 }
 

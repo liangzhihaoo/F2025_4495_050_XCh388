@@ -72,3 +72,12 @@ export async function deleteUserProducts(userId: string) {
   if (error)
     throw new Error(`Supabase deleteUserProducts failed: ${error.message}`);
 }
+
+export async function updateUserActiveStatus(userId: string, isActive: boolean) {
+  const { error } = await supabase
+    .from("users")
+    .update({ is_active: isActive })
+    .eq("id", userId);
+  if (error)
+    throw new Error(`Supabase updateUserActiveStatus failed: ${error.message}`);
+}

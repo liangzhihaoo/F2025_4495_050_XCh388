@@ -4,9 +4,11 @@ import {
   getAppUser,
   updateUserPlanAndLimit,
   banUser,
+  unbanUser,
   deleteAuthUser,
   deleteUserRow,
   deleteUserProducts,
+  updateUserActiveStatus,
   supabase,
 } from "../supabase.js";
 import {
@@ -103,12 +105,39 @@ adminRouter.post("/users/:userId/deactivate", async (req, res) => {
 
     const until = new Date("2999-01-01T00:00:00Z").toISOString();
     await banUser(userId, until);
+    await updateUserActiveStatus(userId, false);
 
     if (user.stripe_customer_id) {
       await pauseAllSubs(user.stripe_customer_id);
     }
 
-    return res.json({ ok: true, userId, status: "deactivated" });
+    return res.json({ ok: true, userId, status: "deactivated", is_active: false });
+  } catch (err: any) {
+    return res.status(400).json({ error: err.message || "Bad request" });
+  }
+});
+
+/**
+ * Reactivate account:
+ * - Clear ban to allow login
+ * - Resume all Stripe subscriptions
+ * - Set is_active to true
+ */
+adminRouter.post("/users/:userId/reactivate", async (req, res) => {
+  const Params = z.object({ userId: z.string().uuid() });
+  try {
+    const { userId } = Params.parse(req.params);
+    const user = await getAppUser(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    await unbanUser(userId);
+    await updateUserActiveStatus(userId, true);
+
+    if (user.stripe_customer_id) {
+      await resumeAllSubs(user.stripe_customer_id);
+    }
+
+    return res.json({ ok: true, userId, status: "reactivated", is_active: true });
   } catch (err: any) {
     return res.status(400).json({ error: err.message || "Bad request" });
   }

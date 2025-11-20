@@ -8,6 +8,7 @@ type Props = {
   onClose: () => void;
   onPlanChange: (userId: string, newPlan: User["plan"]) => void;
   onDeactivate: (userId: string) => void;
+  onReactivate: (userId: string) => void;
   onDelete: (userId: string) => void;
 };
 
@@ -16,6 +17,7 @@ export default function UserDetailDrawer({
   onClose,
   onPlanChange,
   onDeactivate,
+  onReactivate,
   onDelete,
 }: Props) {
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -66,7 +68,7 @@ export default function UserDetailDrawer({
               </div>
               <div>
                 <span className="text-gray-500">Status:</span>{" "}
-                {user?.stripe_customer_id ? "Active" : "Inactive"}
+                {user?.is_active ? "Active" : "Inactive"}
               </div>
               <div>
                 <span className="text-gray-500">Created:</span>{" "}
@@ -103,16 +105,16 @@ export default function UserDetailDrawer({
           </div>
           <div className="mt-auto flex gap-2">
             <button
-              onClick={() => setShowActionsModal(true)}
-              className="px-3 py-2 text-sm rounded border border-amber-300 text-amber-600 hover:bg-amber-50"
-            >
-              Manage User
-            </button>
-            <button
               onClick={() => setShowPlanModal(true)}
               className="px-3 py-2 text-sm rounded border border-blue-300 text-blue-600 hover:bg-blue-50"
             >
               Change Plan
+            </button>
+            <button
+              onClick={() => setShowActionsModal(true)}
+              className="px-3 py-2 text-sm rounded border border-amber-300 text-amber-600 hover:bg-amber-50"
+            >
+              Manage User
             </button>
           </div>
         </div>
@@ -130,6 +132,7 @@ export default function UserDetailDrawer({
         isOpen={showActionsModal}
         onClose={() => setShowActionsModal(false)}
         onDeactivate={onDeactivate}
+        onReactivate={onReactivate}
         onDelete={onDelete}
       />
     </>

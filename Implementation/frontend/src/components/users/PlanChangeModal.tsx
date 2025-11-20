@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { User } from "../../lib/mock";
 import { changePlan } from "../../lib/adminApi";
 
@@ -39,6 +39,13 @@ export default function PlanChangeModal({
 }: Props) {
   const [selectedPlan, setSelectedPlan] = useState<User["plan"] | null>(null);
   const [isChanging, setIsChanging] = useState(false);
+
+  // Initialize selectedPlan with user's current plan when modal opens
+  useEffect(() => {
+    if (isOpen && user) {
+      setSelectedPlan(user.plan);
+    }
+  }, [isOpen, user]);
 
   if (!isOpen || !user) return null;
 

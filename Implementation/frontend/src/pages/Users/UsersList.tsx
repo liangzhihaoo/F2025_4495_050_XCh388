@@ -72,13 +72,30 @@ export default function UsersList() {
       return {
         ...old,
         items: old.items.map((u: User) =>
-          u.id === userId ? { ...u, status: "Suspended" as const } : u
+          u.id === userId ? { ...u, is_active: false } : u
         ),
       };
     });
     if (selected?.id === userId) {
       setSelected((prev) =>
-        prev ? { ...prev, status: "Suspended" as const } : null
+        prev ? { ...prev, is_active: false } : null
+      );
+    }
+  };
+
+  const handleReactivate = (userId: string) => {
+    queryClient.setQueryData(["users", { page, pageSize, filters: { search, plan, status } }], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        items: old.items.map((u: User) =>
+          u.id === userId ? { ...u, is_active: true } : u
+        ),
+      };
+    });
+    if (selected?.id === userId) {
+      setSelected((prev) =>
+        prev ? { ...prev, is_active: true } : null
       );
     }
   };
@@ -116,6 +133,7 @@ export default function UsersList() {
           onView={setSelected}
           onPlanChange={handlePlanChange}
           onDeactivate={handleDeactivate}
+          onReactivate={handleReactivate}
           onDelete={handleDelete}
         />
         <UserDetailDrawer
@@ -123,6 +141,7 @@ export default function UsersList() {
           onClose={() => setSelected(null)}
           onPlanChange={handlePlanChange}
           onDeactivate={handleDeactivate}
+          onReactivate={handleReactivate}
           onDelete={handleDelete}
         />
       </div>
@@ -145,6 +164,7 @@ export default function UsersList() {
         onView={setSelected}
         onPlanChange={handlePlanChange}
         onDeactivate={handleDeactivate}
+        onReactivate={handleReactivate}
         onDelete={handleDelete}
       />
       <Paginator
@@ -167,6 +187,7 @@ export default function UsersList() {
         onClose={() => setSelected(null)}
         onPlanChange={handlePlanChange}
         onDeactivate={handleDeactivate}
+        onReactivate={handleReactivate}
         onDelete={handleDelete}
       />
     </div>
