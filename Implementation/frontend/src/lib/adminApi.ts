@@ -63,6 +63,16 @@ export async function deleteUser(userId: string) {
   );
 }
 
+// Delete product
+export async function deleteProduct(productId: string) {
+  return request<{ ok: boolean; productId: string; deleted: boolean }>(
+    `/admin/products/${productId}`,
+    {
+      method: "DELETE",
+    }
+  );
+}
+
 // Billing types
 export interface BillingKpis {
   mrr: number;

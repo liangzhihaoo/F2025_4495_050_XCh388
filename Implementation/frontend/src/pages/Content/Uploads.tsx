@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import type { UploadItem } from '../../lib/mock'
 import UploadFilters, { type UploadFiltersValue } from '../../components/content/UploadFilters'
 import UploadTable from '../../components/content/UploadTable'
@@ -10,11 +11,13 @@ import DeleteConfirmModal from '../../components/content/DeleteConfirmModal'
 import ImageGalleryModal from '../../components/content/ImageGalleryModal'
 import Paginator from '../../components/ui/Paginator'
 import { fetchUploads } from '../../services/uploads'
+import { deleteProduct } from '../../lib/adminApi'
 import { trackPagination } from '../../lib/posthog'
 
 const paginationOn = import.meta.env.VITE_FEATURE_PAGINATION !== "false";
 
 export default function Uploads() {
+  const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
   const [filters, setFilters] = useState<UploadFiltersValue>({
     q: params.get("q") ?? '',
@@ -69,9 +72,16 @@ export default function Uploads() {
     setToDelete(item)
   }
 
-  const handleConfirmDelete = (item: UploadItem) => {
-    // In a real app, this would make an API call
-    setToDelete(null)
+  const handleConfirmDelete = async (item: UploadItem) => {
+    try {
+      await deleteProduct(item.id);
+      queryClient.invalidateQueries({ queryKey: ["uploads"] });
+      setToDelete(null);
+      toast.success("Product deleted successfully");
+    } catch (error: any) {
+      console.error("Failed to delete product:", error);
+      toast.error(`Failed to delete product: ${error?.message || "Please try again."}`);
+    }
   }
 
   const handleOpenGallery = (startIndex: number) => {

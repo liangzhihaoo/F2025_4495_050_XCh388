@@ -173,6 +173,29 @@ adminRouter.delete("/users/:userId", async (req, res) => {
 });
 
 /**
+ * Delete a product by ID
+ */
+adminRouter.delete("/products/:productId", async (req, res) => {
+  const Params = z.object({ productId: z.string().uuid() });
+  try {
+    const { productId } = Params.parse(req.params);
+
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", productId);
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.json({ ok: true, productId, deleted: true });
+  } catch (err: any) {
+    return res.status(400).json({ error: err.message || "Bad request" });
+  }
+});
+
+/**
  * GET /admin/billing/metrics
  * Returns billing KPIs: MRR, ARR, Active Subscribers, ARPU, Churn Rate
  */
