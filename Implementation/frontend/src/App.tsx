@@ -1,6 +1,7 @@
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import AppRoutes from './app.routes'
+import { Toaster } from './components/ui/Sonner'
 import { initPostHog } from './lib/posthog'
 
 // Initialize PostHog
@@ -21,6 +22,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AppRoutes />
+        <Toaster />
       </BrowserRouter>
     </QueryClientProvider>
   )

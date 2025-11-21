@@ -31,24 +31,26 @@ export default function UploadGrid({ items, onOpen, onDelete }: UploadGridProps)
         >
           {/* Cover Image */}
           <div className="aspect-square bg-gray-100 overflow-hidden">
-            <img
-              src={item.images[0]?.url}
-              alt={`Cover image for ${item.title}`}
-              className="w-full h-full object-cover"
-            />
+            {item.images[0] && (
+              <img
+                src={item.images[0]}
+                alt={`Cover image for ${item.brand || 'product'}`}
+                className="w-full h-full object-cover"
+              />
+            )}
           </div>
 
           {/* Content */}
           <div className="p-4">
             <div className="mb-2">
-              <h3 className="font-medium text-gray-900 truncate">{item.title}</h3>
-              <p className="text-xs text-gray-500">{item.id}</p>
+              <h3 className="font-medium text-gray-900 truncate">{item.brand || 'Product'}</h3>
+              <p className="text-xs text-gray-500">{item.type || '-'}</p>
             </div>
 
             {/* Footer */}
             <div className="flex items-center justify-between text-sm text-gray-600">
-              <span className="truncate">{item.userEmail}</span>
-              <span className="text-xs text-gray-500">{formatDateTime(item.createdAt)}</span>
+              <span className="truncate">{item.uploaderName || '-'}</span>
+              <span className="text-xs text-gray-500">{formatDateTime(item.created_at)}</span>
             </div>
 
             {/* Image Count Badge */}
@@ -67,7 +69,7 @@ export default function UploadGrid({ items, onOpen, onDelete }: UploadGridProps)
                   className={`p-1 rounded-full hover:bg-gray-100 transition-colors ${
                     hoveredItem === item.id ? 'opacity-100' : 'opacity-0'
                   }`}
-                  aria-label={`Delete ${item.title}`}
+                  aria-label={`Delete ${item.brand || 'product'}`}
                 >
                   <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import type { User } from "../../lib/mock";
 import { changePlan } from "../../lib/adminApi";
 
@@ -55,15 +56,13 @@ export default function PlanChangeModal({
 
     setIsChanging(true);
     try {
-      // Simulate API call
-      // await new Promise((resolve) => setTimeout(resolve, 1000));
       await changePlan(user.id, selectedPlan);
       onPlanChange(user.id, selectedPlan);
-      alert(`Plan changed to: ${selectedPlan}`);
       onClose();
+      toast.success(`Plan changed to: ${selectedPlan}`);
     } catch (error: any) {
       console.error("Failed to change plan:", error?.message);
-      alert(`Failed to change plan: ${error?.message}`);
+      toast.error(`Failed to change plan: ${error?.message}`);
     } finally {
       setIsChanging(false);
     }

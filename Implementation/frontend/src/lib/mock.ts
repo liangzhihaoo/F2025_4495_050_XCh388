@@ -93,29 +93,30 @@ export function mockUsers(n: number): User[] {
 }
 
 export type UploadItem = {
-  id: string; // submission id
-  userId: string;
-  userEmail: string;
-  createdAt: string; // ISO string
-  lastUpdatedAt: string; // ISO string
-  title: string; // product name
-  images: { id: string; url: string }[]; // 1..n
-  notes?: string;
+  id: string; // uuid
+  user_id: string; // uuid
+  brand: string | null;
+  type: string | null;
+  price: string | null;
+  images: string[]; // array of base64 strings
+  created_at: string; // ISO timestamp string
+  uploaderName?: string; // joined from users table
 };
 
 export function mockUploads(n: number): UploadItem[] {
+  const brands = ['Nike', 'Adidas', 'Puma', 'Reebok', 'New Balance', null];
+  const types = ['Shoes', 'Clothing', 'Accessories', 'Equipment', null];
   return Array.from({ length: n }).map((_, i) => ({
     id: `sub-${1000 + i}`,
-    userId: `u${i % 12}`,
-    userEmail: `user${i % 12}@demo.com`,
-    createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-    lastUpdatedAt: new Date(Date.now() - i * 86400000 + 3600000).toISOString(),
-    title: `Item ${i + 1}`,
-    images: Array.from({ length: (i % 4) + 1 }).map((__, j) => ({
-      id: `img-${i}-${j}`,
-      url: `https://picsum.photos/seed/${i}-${j}/320/320`,
-    })),
-    notes: i % 5 === 0 ? "Auto-check: possible duplicate." : undefined,
+    user_id: `u${i % 12}`,
+    brand: brands[i % brands.length],
+    type: types[i % types.length],
+    price: Math.random() > 0.1 ? `${(Math.random() * 500 + 10).toFixed(2)}` : null,
+    images: Array.from({ length: (i % 4) + 1 }).map((__, j) =>
+      `https://picsum.photos/seed/${i}-${j}/320/320`
+    ),
+    created_at: new Date(Date.now() - i * 86400000).toISOString(),
+    uploaderName: `User ${i % 12}`,
   }));
 }
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import type { User } from "../../lib/mock";
 import { deactivateUser, reactivateUser, deleteUser } from "../../lib/adminApi";
 
@@ -31,9 +32,10 @@ export default function UserActionsModal({
       await deactivateUser(user.id);
       onDeactivate(user.id);
       handleClose();
+      toast.success("User deactivated successfully");
     } catch (error: any) {
       console.error("Failed to deactivate user:", error);
-      alert(`Failed to deactivate user: ${error?.message}`);
+      toast.error(`Failed to deactivate user: ${error?.message}`);
     } finally {
       setIsProcessing(false);
     }
@@ -45,9 +47,10 @@ export default function UserActionsModal({
       await reactivateUser(user.id);
       onReactivate(user.id);
       handleClose();
+      toast.success("User reactivated successfully");
     } catch (error: any) {
       console.error("Failed to reactivate user:", error);
-      alert(`Failed to reactivate user: ${error?.message}`);
+      toast.error(`Failed to reactivate user: ${error?.message}`);
     } finally {
       setIsProcessing(false);
     }
@@ -59,9 +62,10 @@ export default function UserActionsModal({
       await deleteUser(user.id);
       onDelete(user.id);
       handleClose();
+      toast.success("User deleted successfully");
     } catch (error: any) {
       console.error("Failed to delete user:", error);
-      alert(`Failed to delete user: ${error?.message}`);
+      toast.error(`Failed to delete user: ${error?.message}`);
     } finally {
       setIsProcessing(false);
     }

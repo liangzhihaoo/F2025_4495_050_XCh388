@@ -54,16 +54,18 @@ export default function DeleteConfirmModal({ item, open, onCancel, onConfirm }: 
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 rounded-md bg-gray-100 overflow-hidden">
-                  <img
-                    src={item.images[0]?.url}
-                    alt={`Preview of ${item.title}`}
-                    className="h-full w-full object-cover"
-                  />
+                  {item.images[0] && (
+                    <img
+                      src={item.images[0]}
+                      alt={`Preview of ${item.brand || 'product'}`}
+                      className="h-full w-full object-cover"
+                    />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 truncate">{item.title}</div>
+                  <div className="font-medium text-gray-900 truncate">{item.brand || 'Product'}</div>
                   <div className="text-sm text-gray-500">{item.id}</div>
-                  <div className="text-sm text-gray-600">{item.userEmail}</div>
+                  <div className="text-sm text-gray-600">{item.uploaderName || '-'}</div>
                 </div>
               </div>
             </div>
