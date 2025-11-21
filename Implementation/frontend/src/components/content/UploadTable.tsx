@@ -18,8 +18,8 @@ export default function UploadTable({ items, onOpen, onDelete }: UploadTableProp
   }
 
   const sortedItems = [...items].sort((a, b) => {
-    const dateA = new Date(a.createdAt).getTime()
-    const dateB = new Date(b.createdAt).getTime()
+    const dateA = new Date(a.created_at).getTime()
+    const dateB = new Date(b.created_at).getTime()
     return sortDirection === 'asc' ? dateA - dateB : dateB - dateA
   })
 
@@ -37,7 +37,9 @@ export default function UploadTable({ items, onOpen, onDelete }: UploadTableProp
         <thead className="text-left text-xs text-gray-500 bg-gray-50">
           <tr>
             <th className="px-4 py-3 font-medium">Preview</th>
-            <th className="px-4 py-3 font-medium">Product</th>
+            <th className="px-4 py-3 font-medium">Brand</th>
+            <th className="px-4 py-3 font-medium">Type</th>
+            <th className="px-4 py-3 font-medium">Price</th>
             <th className="px-4 py-3 font-medium">Uploader</th>
             <th className="px-4 py-3 font-medium">
               <button
@@ -46,10 +48,10 @@ export default function UploadTable({ items, onOpen, onDelete }: UploadTableProp
                 aria-label={`Sort by created date ${sortDirection === 'asc' ? 'ascending' : 'descending'}`}
               >
                 Created
-                <svg 
-                  className={`w-3 h-3 transition-transform ${sortDirection === 'asc' ? 'rotate-180' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
+                <svg
+                  className={`w-3 h-3 transition-transform ${sortDirection === 'asc' ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -66,27 +68,32 @@ export default function UploadTable({ items, onOpen, onDelete }: UploadTableProp
               {/* Preview */}
               <td className="px-4 py-3">
                 <div className="h-12 w-12 rounded-md bg-gray-100 overflow-hidden">
-                  <img
-                    src={item.images[0]?.url}
-                    alt={`Preview of ${item.title}`}
-                    className="h-full w-full object-cover"
-                  />
+                  {item.images[0] && (
+                    <img
+                      src={item.images[0]}
+                      alt={`Preview of ${item.brand || 'product'}`}
+                      className="h-full w-full object-cover"
+                    />
+                  )}
                 </div>
               </td>
 
-              {/* Product */}
-              <td className="px-4 py-3">
-                <div>
-                  <div className="text-gray-900 font-medium">{item.title}</div>
-                  <div className="text-xs text-gray-500">{item.id}</div>
-                </div>
+              {/* Brand */}
+              <td className="px-4 py-3 text-gray-900">{item.brand || '-'}</td>
+
+              {/* Type */}
+              <td className="px-4 py-3 text-gray-600">{item.type || '-'}</td>
+
+              {/* Price */}
+              <td className="px-4 py-3 text-gray-600">
+                {item.price ? `$${item.price}` : '-'}
               </td>
 
               {/* Uploader */}
-              <td className="px-4 py-3 text-gray-600">{item.userEmail}</td>
+              <td className="px-4 py-3 text-gray-600">{item.uploaderName || '-'}</td>
 
               {/* Created */}
-              <td className="px-4 py-3 text-gray-600">{formatDateTime(item.createdAt)}</td>
+              <td className="px-4 py-3 text-gray-600">{formatDateTime(item.created_at)}</td>
 
               {/* Images */}
               <td className="px-4 py-3">
@@ -101,14 +108,14 @@ export default function UploadTable({ items, onOpen, onDelete }: UploadTableProp
                   <button
                     onClick={() => onOpen(item)}
                     className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
-                    aria-label={`View details for ${item.title}`}
+                    aria-label={`View details for ${item.brand || 'product'}`}
                   >
                     View
                   </button>
                   <button
                     onClick={() => onDelete(item)}
                     className="px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                    aria-label={`Delete ${item.title}`}
+                    aria-label={`Delete ${item.brand || 'product'}`}
                   >
                     Delete
                   </button>
