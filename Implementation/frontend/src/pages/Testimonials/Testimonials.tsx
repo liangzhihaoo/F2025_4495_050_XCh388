@@ -1,18 +1,26 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import type { Testimonial } from '../../lib/mock'
 import TestimonialFilters, { type FiltersValue } from '../../components/testimonials/TestimonialFilters'
 import TestimonialCard from '../../components/testimonials/TestimonialCard'
 import TestimonialForm, { type FormMode } from '../../components/testimonials/TestimonialForm'
 import DeleteConfirmModal from '../../components/testimonials/DeleteConfirmModal'
 import Paginator from '../../components/ui/Paginator'
-import { fetchTestimonials } from '../../services/testimonials'
+import {
+  fetchTestimonials,
+  createTestimonial,
+  updateTestimonial,
+  deleteTestimonial,
+  toggleFeatured
+} from '../../services/testimonials'
 import { trackPagination } from '../../lib/posthog'
 
 const paginationOn = import.meta.env.VITE_FEATURE_PAGINATION !== "false";
 
 export default function Testimonials() {
+  const queryClient = useQueryClient()
   const [params, setParams] = useSearchParams();
   const [filters, setFilters] = useState<FiltersValue>({
     q: params.get("q") ?? '',
@@ -55,6 +63,74 @@ export default function Testimonials() {
     placeholderData: (previousData) => previousData,
   });
 
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: ({ values, avatarFile }: {
+      values: Omit<Testimonial, "id"|"created_at"|"avatar_url">,
+      avatarFile: File | null
+    }) => createTestimonial(values, avatarFile),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["testimonials"] })
+      toast.success("Testimonial created successfully")
+      setFormOpen(false)
+      setEditing(null)
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create testimonial")
+    }
+  })
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: ({
+      id,
+      values,
+      avatarFile,
+      currentAvatarUrl
+    }: {
+      id: number
+      values: Omit<Testimonial, "id"|"created_at"|"avatar_url">,
+      avatarFile: File | null
+      currentAvatarUrl: string | null
+    }) => updateTestimonial(id, values, avatarFile, currentAvatarUrl),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["testimonials"] })
+      toast.success("Testimonial updated successfully")
+      setFormOpen(false)
+      setEditing(null)
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update testimonial")
+    }
+  })
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: ({ id, avatarUrl }: { id: number, avatarUrl: string | null }) =>
+      deleteTestimonial(id, avatarUrl),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["testimonials"] })
+      toast.success("Testimonial deleted successfully")
+      setToDelete(null)
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete testimonial")
+    }
+  })
+
+  // Toggle featured mutation
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: ({ id, currentStatus }: { id: number, currentStatus: boolean }) =>
+      toggleFeatured(id, currentStatus),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["testimonials"] })
+      toast.success("Featured status updated")
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update featured status")
+    }
+  })
+
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
 
@@ -74,12 +150,17 @@ export default function Testimonials() {
     setFormOpen(true)
   }
 
-  const handleSubmit = (values: Omit<Testimonial, "id"|"createdAt"|"updatedAt">) => {
-    // In a real app, this would make an API call
-    // For now, just close the form
-    setFormOpen(false)
-    setEditing(null)
-    // Invalidate queries to refetch
+  const handleSubmit = (values: Omit<Testimonial, "id"|"created_at">, avatarFile: File | null) => {
+    if (formMode === 'create') {
+      createMutation.mutate({ values, avatarFile })
+    } else if (editing) {
+      updateMutation.mutate({
+        id: editing.id,
+        values,
+        avatarFile,
+        currentAvatarUrl: editing.avatar_url
+      })
+    }
   }
 
   const handleDelete = (item: Testimonial) => {
@@ -87,14 +168,17 @@ export default function Testimonials() {
   }
 
   const handleConfirmDelete = (item: Testimonial) => {
-    // In a real app, this would make an API call
-    setToDelete(null)
-    // Invalidate queries to refetch
+    deleteMutation.mutate({
+      id: item.id,
+      avatarUrl: item.avatar_url
+    })
   }
 
   const handleToggleFeatured = (item: Testimonial) => {
-    // In a real app, this would make an API call
-    // Invalidate queries to refetch
+    toggleFeaturedMutation.mutate({
+      id: item.id,
+      currentStatus: item.is_featured
+    })
   }
 
   return (

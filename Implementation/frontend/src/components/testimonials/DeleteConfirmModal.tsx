@@ -54,22 +54,22 @@ export default function DeleteConfirmModal({ open, item, onCancel, onConfirm }: 
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <div className="flex items-start gap-3">
                 <div className="h-12 w-12 rounded-full bg-gray-100 overflow-hidden flex-shrink-0">
-                  {item.authorAvatarUrl ? (
+                  {item.avatar_url ? (
                     <img
-                      src={item.authorAvatarUrl}
-                      alt={`${item.authorName} avatar`}
+                      src={item.avatar_url}
+                      alt={`${item.author_name} avatar`}
                       className="h-full w-full object-cover"
                     />
                   ) : (
                     <div className="h-full w-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm font-medium">
-                      {item.authorName.charAt(0).toUpperCase()}
+                      {item.author_name.charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900">{item.authorName}</div>
+                  <div className="font-medium text-gray-900">{item.author_name}</div>
                   <div className="text-sm text-gray-600">
-                    {item.authorRole && `${item.authorRole}${item.company ? ` at ${item.company}` : ''}`}
+                    {item.role_title && `${item.role_title}${item.company ? ` at ${item.company}` : ''}`}
                   </div>
                   <div className="text-sm text-gray-500 mt-1 line-clamp-2">
                     "{item.quote}"

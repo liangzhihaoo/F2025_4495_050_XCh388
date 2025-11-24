@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import type { TestimonialStatus } from '../../lib/mock'
+import type { TestimonialStatus, TestimonialSource } from '../../lib/mock'
 
 export type FiltersValue = {
   q: string
   status: "all" | TestimonialStatus
   featuredOnly: boolean
-  source: "all" | "In-app" | "Imported" | "Manual"
+  source: "all" | TestimonialSource
 }
 
 type Props = {
@@ -57,9 +57,9 @@ export default function TestimonialFilters({ value, onChange, onCreate }: Props)
           className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="all">All</option>
-          <option value="Published">Published</option>
-          <option value="Draft">Draft</option>
-          <option value="Hidden">Hidden</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+          <option value="hidden">Hidden</option>
         </select>
       </div>
 
@@ -85,9 +85,9 @@ export default function TestimonialFilters({ value, onChange, onCreate }: Props)
           className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="all">All</option>
-          <option value="In-app">In-app</option>
-          <option value="Imported">Imported</option>
-          <option value="Manual">Manual</option>
+          <option value="in_app">In-app</option>
+          <option value="imported">Imported</option>
+          <option value="manual">Manual</option>
         </select>
       </div>
 
