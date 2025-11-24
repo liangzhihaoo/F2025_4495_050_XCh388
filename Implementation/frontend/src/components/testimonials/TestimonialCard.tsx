@@ -13,9 +13,9 @@ export default function TestimonialCard({ item, onEdit, onDelete, onToggleFeatur
   const [isExpanded, setIsExpanded] = useState(false)
 
   const statusColors = {
-    Published: 'bg-green-50 text-green-700',
-    Draft: 'bg-gray-100 text-gray-700',
-    Hidden: 'bg-amber-50 text-amber-700'
+    published: 'bg-green-50 text-green-700',
+    draft: 'bg-gray-100 text-gray-700',
+    hidden: 'bg-amber-50 text-amber-700'
   }
 
   const renderStars = (rating: number) => {
@@ -37,26 +37,26 @@ export default function TestimonialCard({ item, onEdit, onDelete, onToggleFeatur
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
-            {item.authorAvatarUrl ? (
+            {item.avatar_url ? (
               <img
-                src={item.authorAvatarUrl}
-                alt={`${item.authorName} avatar`}
+                src={item.avatar_url}
+                alt={`${item.author_name} avatar`}
                 className="h-full w-full object-cover"
               />
             ) : (
               <div className="h-full w-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm font-medium">
-                {item.authorName.charAt(0).toUpperCase()}
+                {item.author_name.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-gray-900 truncate">{item.authorName}</div>
+            <div className="font-medium text-gray-900 truncate">{item.author_name}</div>
             <div className="text-sm text-gray-600 truncate">
-              {item.authorRole && `${item.authorRole}${item.company ? ` at ${item.company}` : ''}`}
+              {item.role_title && `${item.role_title}${item.company ? ` at ${item.company}` : ''}`}
             </div>
           </div>
         </div>
-        {item.featured && (
+        {item.is_featured && (
           <div className="flex-shrink-0">
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
               Featured
@@ -101,7 +101,7 @@ export default function TestimonialCard({ item, onEdit, onDelete, onToggleFeatur
           )}
         </div>
         <div className="text-xs text-gray-500">
-          {formatDate(item.createdAt)}
+          {formatDate(item.created_at)}
         </div>
       </div>
 
@@ -110,25 +110,25 @@ export default function TestimonialCard({ item, onEdit, onDelete, onToggleFeatur
         <button
           onClick={() => onEdit(item)}
           className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
-          aria-label={`Edit testimonial from ${item.authorName}`}
+          aria-label={`Edit testimonial from ${item.author_name}`}
         >
           Edit
         </button>
         <button
           onClick={() => onToggleFeatured(item)}
           className={`px-3 py-1 text-sm rounded transition-colors ${
-            item.featured
+            item.is_featured
               ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50'
               : 'text-gray-600 hover:text-gray-700 hover:bg-gray-50'
           }`}
-          aria-label={`${item.featured ? 'Unfeature' : 'Feature'} testimonial from ${item.authorName}`}
+          aria-label={`${item.is_featured ? 'Unfeature' : 'Feature'} testimonial from ${item.author_name}`}
         >
-          {item.featured ? 'Unfeature' : 'Feature'}
+          {item.is_featured ? 'Unfeature' : 'Feature'}
         </button>
         <button
           onClick={() => onDelete(item)}
           className="px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-          aria-label={`Delete testimonial from ${item.authorName}`}
+          aria-label={`Delete testimonial from ${item.author_name}`}
         >
           Delete
         </button>
