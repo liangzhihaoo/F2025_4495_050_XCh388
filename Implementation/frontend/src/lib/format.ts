@@ -31,3 +31,9 @@ export const formatAgo = (iso: string) => {
   if (mins) return `${mins}m ago`;
   return `${s}s ago`;
 };
+
+export const formatTrend = (change: number): string => {
+  if (change === 0) return '0%';
+  const sign = change > 0 ? '+' : '';
+  return `${sign}${(change * 100).toFixed(1)}%`;
+};
