@@ -242,4 +242,4 @@ Once both servers are running:
 2. Explore the different sections (Dashboard, Users, Analytics, etc.)
 3. Test admin operations like changing user plans or managing accounts
 
-For any issues or questions, please refer to the project documentation or contact the development team.
+For any issues or questions, please refer to the project documentation.
