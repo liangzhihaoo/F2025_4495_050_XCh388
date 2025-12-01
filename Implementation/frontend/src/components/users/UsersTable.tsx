@@ -36,7 +36,8 @@ export default function UsersTable({
 
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      <table className="table-auto w-full">
+      <div className="overflow-x-auto">
+        <table className="table-auto w-full min-w-[800px]">
         <thead className="text-left text-xs text-gray-500">
           <tr>
             <th className="px-4 py-3">Name</th>
@@ -138,7 +139,7 @@ export default function UsersTable({
           ))}
         </tbody>
       </table>
-
+      </div>
 
       <PlanChangeModal
         user={selectedUser}

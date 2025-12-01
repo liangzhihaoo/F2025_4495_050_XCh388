@@ -9,7 +9,7 @@ type SidebarProps = {
 
 export default function Sidebar({ onNavigate }: SidebarProps) {
   return (
-    <aside className="md:w-64 shrink-0 border-r bg-white h-full">
+    <aside className="w-64 h-screen border-r bg-white overflow-y-auto">
       <nav className="flex flex-col gap-2 p-4 w-full">
         <NavLink to="/" end onClick={onNavigate} className={({ isActive }) => `${linkBase} ${isActive ? 'bg-gray-100 text-gray-900' : 'hover:bg-gray-50'}`}>
           <Home className="h-4 w-4" />

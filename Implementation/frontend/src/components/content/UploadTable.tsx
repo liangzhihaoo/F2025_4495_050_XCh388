@@ -33,7 +33,8 @@ export default function UploadTable({ items, onOpen, onDelete }: UploadTableProp
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <table className="table-auto w-full">
+      <div className="overflow-x-auto">
+        <table className="table-auto w-full min-w-[800px]">
         <thead className="text-left text-xs text-gray-500 bg-gray-50">
           <tr>
             <th className="px-4 py-3 font-medium">Preview</th>
@@ -125,6 +126,7 @@ export default function UploadTable({ items, onOpen, onDelete }: UploadTableProp
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }
