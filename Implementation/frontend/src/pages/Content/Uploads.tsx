@@ -21,8 +21,8 @@ export default function Uploads() {
   const [params, setParams] = useSearchParams();
   const [filters, setFilters] = useState<UploadFiltersValue>({
     q: params.get("q") ?? '',
-    range: (params.get("range") as any) ?? 'all',
-    view: (params.get("view") as any) ?? 'table'
+    range: (params.get("range") as UploadFiltersValue['range']) ?? 'all',
+    view: (params.get("view") as UploadFiltersValue['view']) ?? 'table'
   })
   const [selectedItem, setSelectedItem] = useState<UploadItem | null>(null)
   const [toDelete, setToDelete] = useState<UploadItem | null>(null)
@@ -48,7 +48,7 @@ export default function Uploads() {
   // Reset to page 1 when filters change
   useEffect(() => {
     if (page !== 1) setPage(1);
-  }, [filters.q, filters.range]);
+  }, [filters.q, filters.range, page]);
 
   // Fetch uploads with React Query
   const { data, isFetching } = useQuery({
@@ -78,9 +78,10 @@ export default function Uploads() {
       queryClient.invalidateQueries({ queryKey: ["uploads"] });
       setToDelete(null);
       toast.success("Product deleted successfully");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to delete product:", error);
-      toast.error(`Failed to delete product: ${error?.message || "Please try again."}`);
+      const message = error instanceof Error ? error.message : "Please try again.";
+      toast.error(`Failed to delete product: ${message}`);
     }
   }
 
@@ -104,7 +105,14 @@ export default function Uploads() {
 
       <UploadFilters value={filters} onChange={handleFiltersChange} />
 
-      {filters.view === 'table' ? (
+      {isFetching && items.length === 0 ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+            <p className="text-sm text-gray-500">Loading uploads...</p>
+          </div>
+        </div>
+      ) : filters.view === 'table' ? (
         <UploadTable
           items={items}
           onOpen={handleViewItem}
